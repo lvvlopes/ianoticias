@@ -1,0 +1,18 @@
+{#
+  Renderiza a lista principal (agrupada por dia) ou o estado vazio.
+  Usada tanto no index (bloco inicial) quanto pelo fragmento HTMX de filtro.
+#}
+{% if grouped %}
+  {% for day, items in grouped.items() %}
+    {% include "partials/day_group.html" %}
+  {% endfor %}
+{% else %}
+  <div class="empty">
+    Nenhuma notícia por aqui ainda.
+    {% if is_admin %}
+      Clique em <b>Buscar Notícias</b> no topo para popular o portal.
+    {% else %}
+      Volte em instantes — ou entre como admin para disparar a busca.
+    {% endif %}
+  </div>
+{% endif %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}IANoticias — o que importa em inteligência artificial{% endblock %}
+
+{# Última manchete na util bar #}
+{% block util_center %}
+  <span class="util-latest">
+    {% if hero %}
+      ÚLTIMA: <b>{{ hero.ig_title }}</b>
+    {% else %}
+      <b>Portal pronto</b> — sem notícias ainda
+    {% endif %}
+  </span>
+{% endblock %}
+
+{# Botão principal na nav do masthead #}
+{% block nav_extra %}
+  {% if is_admin %}
+    <button
+      class="btn-primary"
+      hx-post="/api/ingest"
+      hx-target="#ingest-result"
+      hx-swap="innerHTML"
+      hx-disabled-elt="this">
+      <span class="btn-idle">Buscar Notícias</span>
+      <span class="btn-busy">Buscando<span class="dots"><i></i><i></i><i></i></span></span>
+    </button>
+  {% else %}
+    <a href="/login" class="btn-primary" style="text-decoration:none">Entrar como admin</a>
+  {% endif %}
+{% endblock %}
+
+{# Ticker abaixo do masthead #}
+{% block ticker %}
+  {% if ticker_items %}
+    <div class="ticker">
+      <div class="ticker-inner">
+        <div class="ticker-label"><span class="live-dot" aria-hidden="true"></span> No radar</div>
+        <div class="ticker-track">
+          <div class="ticker-move">
+            {% for _ in range(2) %}
+              {% for a in ticker_items %}
+                <a href="{{ a.source_url }}" target="_blank" rel="noopener noreferrer">{{ a.ig_title }}</a>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div id="ingest-result"></div>
+
+{% if hero %}
+<div class="lead">
+  <div class="lead-main">
+    <article class="hero-card hero-{{ hero.category.value }}" data-more-box>
+      <div class="grid-lines" aria-hidden="true"></div>
+      <span class="hero-kicker">{{ CATEGORY_KICKERS[hero.category.value] }}</span>
+      <h1 class="hero-h">
+        <a href="{{ hero.source_url }}" target="_blank" rel="noopener noreferrer">{{ hero.ig_title }}</a>
+      </h1>
+      {% set _hp = (hero.ig_content or '').split('\n\n') %}
+      <p class="hero-stand">{{ _hp[0] }}</p>
+      {% if _hp | length > 1 %}
+        <p class="hero-stand more-text">{{ _hp[1:] | join('\n\n') }}</p>
+      {% endif %}
+      <div class="hero-meta">
+        <span class="by">{{ hero.source_name }}</span>
+        <span>·</span>
+        <span>{{ hero.published_at.strftime('%d/%m · %H:%M') }}</span>
+        <span>·</span>
+        <a href="{{ hero.source_url }}" target="_blank" rel="noopener noreferrer">Ler matéria completa ↗</a>
+        {% if _hp | length > 1 %}
+          <span>·</span>
+          <button type="button" class="hero-more" data-toggle-more>Veja mais</button>
+        {% endif %}
+        {% if is_admin %}
+          <span>·</span>
+          <span>{% if hero.ig_status.value == 'posted' %}✓ Postado no IG{% else %}Rascunho IG{% endif %}</span>
+        {% endif %}
+      </div>
+    </article>
+
+    {% if subs %}
+    <div class="lead-sub">
+      {% for a in subs %}
+        <div class="subart" data-more-box>
+          <span class="eyebrow">{{ CATEGORY_LABELS[a.category.value] }}</span>
+          <h3><a href="{{ a.source_url }}" target="_blank" rel="noopener noreferrer">{{ a.ig_title }}</a></h3>
+          {% set _sp = (a.ig_content or '').split('\n\n') %}
+          <p>{{ _sp[0] }}</p>
+          {% if _sp | length > 1 %}
+            <p class="more-text">{{ _sp[1:] | join('\n\n') }}</p>
+            <button type="button" class="sub-more" data-toggle-more>Veja mais</button>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <aside class="rail">
+    <div class="rail-block">
+      <h4>Em alta <span class="mono" style="font-size:9px;color:var(--ink-3);font-weight:400">últimas</span></h4>
+      <ol class="trend">
+        {% for a in trending %}
+          <li>
+            <span class="num">{{ loop.index }}</span>
+            <a href="{{ a.source_url }}" target="_blank" rel="noopener noreferrer">{{ a.ig_title }}</a>
+          </li>
+        {% else %}
+          <li><a href="#" style="color:var(--ink-3)">Sem itens em alta ainda.</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="rail-block">
+      <div class="panel">
+        <div class="bh"><span class="tag">Curadoria</span></div>
+        <h4>Distribuição por editoria</h4>
+        <p class="desc">O que a redação-máquina destacou nesta janela.</p>
+        {% for cat in CATEGORIES_ORDERED %}
+          <div class="stat">
+            <span class="k">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{{ CATEGORY_COLORS[cat] }};margin-right:6px;vertical-align:middle"></span>
+              {{ CATEGORY_SECTION_TITLES[cat] }}
+            </span>
+            <span class="v">{{ totals[cat] }}</span>
+          </div>
+        {% endfor %}
+        <div class="stat" style="margin-top:6px;border-top:1.5px solid var(--ink)">
+          <span class="k">Total</span>
+          <span class="v">{{ total_count }}</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endif %}
+
+<!-- Filtros -->
+<nav class="filters" aria-label="Filtrar por categoria">
+  <button
+    hx-get="/articles?categoria=todas"
+    hx-target="#article-list"
+    hx-swap="innerHTML"
+    hx-push-url="/"
+    aria-pressed="{{ 'true' if selected_category == 'todas' else 'false' }}">
+    Todas <span class="mono" style="opacity:.6">· {{ total_count }}</span>
+  </button>
+  {% for cat in CATEGORIES_ORDERED %}
+    <button
+      hx-get="/articles?categoria={{ cat }}"
+      hx-target="#article-list"
+      hx-swap="innerHTML"
+      hx-push-url="/?categoria={{ cat }}"
+      aria-pressed="{{ 'true' if selected_category == cat else 'false' }}">
+      <span class="dot" style="background:{{ CATEGORY_COLORS[cat] }}"></span>
+      {{ CATEGORY_SECTION_TITLES[cat] }}
+      <span class="mono" style="opacity:.6">· {{ totals[cat] }}</span>
+    </button>
+  {% endfor %}
+</nav>
+
+<div id="article-list">
+  {% include "partials/article_list.html" %}
+</div>
+
+{% endblock %}

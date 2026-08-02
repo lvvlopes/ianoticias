@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SINAL — Inteligência artificial, decodificada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14141B;
+    --ink-2:#43434E;
+    --ink-3:#6C6C77;
+    --paper:#E9EAEC;
+    --paper-2:#DFE0E3;
+    --panel:#F4F4F5;
+    --line:rgba(20,20,27,0.14);
+    --line-strong:rgba(20,20,27,0.28);
+    --gold:#F4B223;
+    --gold-deep:#B5810F;
+    --pos:#1E9E68;
+    --neg:#D8483F;
+    --hero:#111017;
+    --hero-2:#1B1A24;
+    --hero-text:#EDECE6;
+
+    --display:'Space Grotesk',system-ui,sans-serif;
+    --serif:'Newsreader',Georgia,serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+
+    --maxw:1240px;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:18px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+
+  .mono{font-family:var(--mono)}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+
+  /* ---------- Utility bar ---------- */
+  .util{
+    background:var(--hero);
+    color:var(--hero-text);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .util-inner{
+    display:flex;align-items:center;gap:22px;
+    height:34px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.05em;
+  }
+  .util-date{color:var(--gold);white-space:nowrap;font-weight:600}
+  .util-latest{
+    flex:1;min-width:0;overflow:hidden;white-space:nowrap;
+    color:rgba(237,236,230,.7);
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 92%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 5%,#000 92%,transparent);
+  }
+  .util-latest b{color:var(--hero-text);font-weight:600}
+  .util-tag{color:rgba(237,236,230,.55);white-space:nowrap}
+  @media(max-width:720px){.util-tag,.util-latest{display:none}.util-inner{justify-content:space-between}}
+
+  /* ---------- Masthead ---------- */
+  .mast{
+    background:var(--paper);
+    border-bottom:1.5px solid var(--ink);
+    position:sticky;top:0;z-index:40;
+  }
+  .mast-inner{
+    display:flex;align-items:center;gap:26px;
+    padding:16px 0 14px;
+  }
+  .brand{display:flex;align-items:center;gap:14px;text-decoration:none}
+  .wordmark{
+    font-family:var(--display);font-weight:700;
+    font-size:34px;letter-spacing:.02em;line-height:1;
+    color:var(--ink);
+  }
+  .wordmark span{color:var(--gold-deep)}
+  .signal{display:flex;align-items:flex-end;gap:2px;height:30px}
+  .signal i{
+    display:block;width:3px;height:6px;background:var(--gold-deep);border-radius:2px;
+    animation:pulse 1.2s ease-in-out infinite;
+  }
+  .signal i:nth-child(1){animation-delay:0s}
+  .signal i:nth-child(2){animation-delay:.12s}
+  .signal i:nth-child(3){animation-delay:.24s}
+  .signal i:nth-child(4){animation-delay:.36s}
+  .signal i:nth-child(5){animation-delay:.48s}
+  .signal i:nth-child(6){animation-delay:.6s}
+  .signal i:nth-child(7){animation-delay:.72s}
+  @keyframes pulse{0%,100%{height:5px;opacity:.5}50%{height:26px;opacity:1}}
+
+  .tagline{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+    color:var(--ink-3);text-transform:uppercase;margin-top:5px;
+  }
+  .mast-brand-col{display:flex;flex-direction:column}
+
+  .nav{display:flex;gap:26px;margin-left:auto;align-items:center}
+  .nav a{
+    font-family:var(--mono);font-size:12.5px;font-weight:500;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink-2);padding:6px 0;
+    border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+  }
+  .nav a:hover,.nav a:focus-visible{color:var(--ink);border-color:var(--gold)}
+  .btn-sub{
+    font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;background:var(--ink);color:var(--paper);
+    padding:9px 16px;border-radius:2px;transition:background .15s;
+  }
+  .btn-sub:hover,.btn-sub:focus-visible{background:var(--gold-deep)}
+  .menu-toggle{display:none;background:none;border:1.5px solid var(--ink);
+    border-radius:2px;padding:8px 10px;cursor:pointer;margin-left:auto}
+  .menu-toggle span{display:block;width:20px;height:2px;background:var(--ink);margin:4px 0}
+
+  @media(max-width:940px){
+    .nav{display:none;position:absolute;top:100%;left:0;right:0;background:var(--paper);
+      flex-direction:column;align-items:flex-start;gap:0;padding:8px 28px 18px;
+      border-bottom:1.5px solid var(--ink);box-shadow:0 20px 40px rgba(0,0,0,.12)}
+    .nav.open{display:flex}
+    .nav a{width:100%;padding:12px 0;border-bottom:1px solid var(--line)}
+    .nav .btn-sub{margin-top:12px}
+    .menu-toggle{display:block}
+    .wordmark{font-size:28px}
+  }
+
+  /* ---------- Live ticker ---------- */
+  .ticker{
+    background:var(--hero);color:var(--hero-text);overflow:hidden;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .ticker-inner{display:flex;align-items:stretch}
+  .ticker-label{
+    flex:none;display:flex;align-items:center;gap:8px;
+    background:var(--gold);color:var(--ink);
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;
+    padding:0 16px;text-transform:uppercase;
+  }
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--neg);
+    box-shadow:0 0 0 0 rgba(216,72,63,.6);animation:live 1.6s ease-out infinite}
+  @keyframes live{0%{box-shadow:0 0 0 0 rgba(216,72,63,.6)}70%{box-shadow:0 0 0 7px rgba(216,72,63,0)}100%{box-shadow:0 0 0 0 rgba(216,72,63,0)}}
+  .ticker-track{overflow:hidden;flex:1;position:relative;display:flex;align-items:center}
+  .ticker-move{display:inline-flex;white-space:nowrap;gap:0;animation:marquee 42s linear infinite}
+  .ticker-track:hover .ticker-move{animation-play-state:paused}
+  .ticker-move a{
+    font-family:var(--mono);font-size:12px;padding:11px 26px;letter-spacing:.02em;
+    color:rgba(237,236,230,.82);position:relative;
+  }
+  .ticker-move a::before{content:"◆";color:var(--gold);margin-right:14px;font-size:8px;vertical-align:middle}
+  .ticker-move a:hover{color:var(--hero-text)}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* ---------- Lead grid ---------- */
+  .lead{display:grid;grid-template-columns:1fr 340px;gap:0;border-bottom:1px solid var(--line-strong)}
+  .lead-main{border-right:1px solid var(--line-strong);padding:38px 40px 44px 0}
+  .hero-card{
+    position:relative;border-radius:4px;overflow:hidden;color:var(--hero-text);
+    padding:34px 36px 40px;min-height:430px;display:flex;flex-direction:column;justify-content:flex-end;
+    background:
+      radial-gradient(120% 90% at 12% 8%, rgba(244,178,35,.32), transparent 55%),
+      radial-gradient(90% 80% at 92% 18%, rgba(90,68,220,.35), transparent 60%),
+      radial-gradient(120% 120% at 78% 110%, rgba(30,158,104,.22), transparent 55%),
+      linear-gradient(155deg,var(--hero-2),var(--hero));
+  }
+  .hero-card::after{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  }
+  .hero-card .grid-lines{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;
+    background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px);
+    background-size:100% 34px;
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 60%);
+            mask-image:linear-gradient(180deg,transparent,#000 60%);
+  }
+  .hero-kicker{position:relative;display:inline-flex;align-items:center;gap:9px;
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:18px}
+  .hero-kicker::before{content:"";width:22px;height:1.5px;background:var(--gold)}
+  .hero-h{
+    position:relative;font-family:var(--display);font-weight:700;
+    font-size:clamp(28px,3.4vw,46px);line-height:1.03;letter-spacing:-.015em;margin:0 0 16px;
+  }
+  .hero-stand{position:relative;font-size:19px;line-height:1.45;color:rgba(237,236,230,.82);max-width:60ch;margin:0 0 22px}
+  .hero-meta{position:relative;display:flex;gap:16px;align-items:center;
+    font-family:var(--mono);font-size:11px;color:rgba(237,236,230,.6);letter-spacing:.04em}
+  .hero-meta .by{color:var(--hero-text)}
+
+  .lead-sub{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:34px;border-top:1px solid var(--line)}
+  .subart{padding:22px 26px 4px 0;border-right:1px solid var(--line)}
+  .subart:last-child{border-right:none;padding-right:0;padding-left:26px}
+  .subart h3{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.15;letter-spacing:-.01em;margin:10px 0 8px}
+  .subart h3 a:hover{color:var(--gold-deep)}
+  .subart p{font-size:16px;color:var(--ink-2);margin:0}
+
+  /* ---------- Sidebar ---------- */
+  .rail{padding:38px 0 44px 34px;display:flex;flex-direction:column;gap:34px}
+  .rail-block h4{
+    font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink);margin:0 0 14px;padding-bottom:10px;border-bottom:1.5px solid var(--ink);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .trend{list-style:none;margin:0;padding:0}
+  .trend li{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .trend .num{font-family:var(--display);font-weight:700;font-size:22px;color:var(--gold-deep);line-height:1;flex:none;width:26px}
+  .trend a{font-family:var(--serif);font-size:16px;line-height:1.28;font-weight:500}
+  .trend a:hover{color:var(--gold-deep)}
+
+  /* Bolsa de modelos */
+  .board{background:var(--hero);border-radius:4px;padding:6px 0;overflow:hidden}
+  .board-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 10px;
+    border-bottom:1px solid rgba(255,255,255,.1)}
+  .board-head .t{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--hero-text);text-transform:uppercase}
+  .board-head .s{font-family:var(--mono);font-size:9.5px;color:rgba(237,236,230,.5);letter-spacing:.06em}
+  .board-row{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;
+    border-bottom:1px solid rgba(255,255,255,.06)}
+  .board-row:last-child{border-bottom:none}
+  .board-row .name{font-family:var(--mono);font-size:12px;color:var(--hero-text);letter-spacing:.03em}
+  .board-row .val{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px}
+  .board-row .idx{color:rgba(237,236,230,.65)}
+  .chg{display:inline-flex;align-items:center;gap:3px;font-weight:600;min-width:58px;justify-content:flex-end}
+  .chg.up{color:#38C98A}
+  .chg.down{color:#F0776E}
+  .chg .ar{font-size:9px}
+
+  /* Briefing IA */
+  .brief{background:var(--panel);border:1.5px solid var(--ink);border-radius:4px;padding:20px}
+  .brief .bh{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .brief .bh .tag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;background:var(--gold);color:var(--ink);padding:3px 7px;border-radius:2px}
+  .brief h4{font-family:var(--display);font-weight:600;font-size:18px;margin:8px 0 4px;border:none;padding:0;letter-spacing:-.01em}
+  .brief .desc{font-size:14.5px;color:var(--ink-2);margin:0 0 16px;line-height:1.4}
+  .brief-btn{width:100%;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em;
+    text-transform:uppercase;background:var(--ink);color:var(--paper);border:none;border-radius:3px;
+    padding:12px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .brief-btn:hover:not(:disabled){background:var(--gold-deep)}
+  .brief-btn:disabled{opacity:.6;cursor:progress}
+  .brief-out{margin-top:16px;display:none}
+  .brief-out.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .brief-item{padding:12px 0;border-top:1px solid var(--line)}
+  .brief-item:first-child{border-top:none}
+  .brief-item .it-t{font-family:var(--display);font-weight:600;font-size:15.5px;line-height:1.25;margin:0 0 3px}
+  .brief-item .it-c{font-size:14px;color:var(--ink-2);margin:0;line-height:1.4}
+  .brief-plain{font-size:14.5px;color:var(--ink);line-height:1.5;white-space:pre-wrap}
+  .brief-foot{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.05em;margin-top:14px;text-transform:uppercase}
+  .dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--paper);margin:0 2px;animation:blink 1s infinite}
+  .dots span:nth-child(2){animation-delay:.2s}
+  .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+  /* ---------- Sections ---------- */
+  .section{padding:46px 0 8px;border-top:1px solid var(--line-strong)}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:26px}
+  .sec-head h2{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em;margin:0}
+  .sec-head .rule{flex:1;height:1px;background:var(--line-strong)}
+  .sec-head .more{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--gold-deep)}
+  .sec-head .more:hover{color:var(--ink)}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+  .card{padding:0 26px;border-right:1px solid var(--line)}
+  .card:first-child{padding-left:0}
+  .card:last-child{border-right:none;padding-right:0}
+  .thumb{position:relative;border-radius:3px;overflow:hidden;aspect-ratio:16/10;margin-bottom:16px}
+  .thumb::after{content:"";position:absolute;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E")}
+  .thumb .cat{position:absolute;left:12px;top:12px;z-index:2;
+    font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    background:rgba(17,16,23,.7);color:var(--gold);padding:4px 9px;border-radius:2px;backdrop-filter:blur(4px)}
+  .g1{background:radial-gradient(90% 90% at 20% 20%,rgba(244,178,35,.5),transparent 60%),linear-gradient(140deg,#2A2536,#141019)}
+  .g2{background:radial-gradient(90% 90% at 80% 20%,rgba(90,68,220,.55),transparent 60%),linear-gradient(140deg,#151B2E,#0F1119)}
+  .g3{background:radial-gradient(90% 90% at 30% 80%,rgba(30,158,104,.5),transparent 60%),linear-gradient(140deg,#122420,#0F1614)}
+  .g4{background:radial-gradient(90% 90% at 75% 75%,rgba(216,72,63,.45),transparent 60%),linear-gradient(140deg,#2A1518,#160F12)}
+  .g5{background:radial-gradient(100% 100% at 50% 0%,rgba(120,150,255,.4),transparent 55%),linear-gradient(140deg,#1B1E2B,#101119)}
+  .g6{background:radial-gradient(90% 90% at 15% 60%,rgba(244,178,35,.35),transparent 55%),radial-gradient(90% 90% at 85% 30%,rgba(90,68,220,.4),transparent 55%),linear-gradient(140deg,#1D1A2A,#111017)}
+  .card .k{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .card h3{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.16;letter-spacing:-.01em;margin:8px 0 8px}
+  .card h3 a:hover{color:var(--gold-deep)}
+  .card p{font-size:15.5px;color:var(--ink-2);margin:0 0 14px}
+  .card .foot{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.03em;
+    padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between}
+
+  /* ---------- Newsletter ---------- */
+  .news{margin-top:56px;background:var(--hero);color:var(--hero-text);border-radius:5px;overflow:hidden;
+    display:grid;grid-template-columns:1.1fr 1fr;position:relative}
+  .news::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(70% 120% at 90% 10%,rgba(244,178,35,.25),transparent 60%)}
+  .news-l{padding:44px 44px 46px;position:relative}
+  .news-l .eyebrow{color:var(--gold)}
+  .news-l h2{font-family:var(--display);font-weight:700;font-size:clamp(24px,2.6vw,34px);
+    letter-spacing:-.02em;line-height:1.08;margin:14px 0 12px}
+  .news-l p{color:rgba(237,236,230,.75);font-size:17px;margin:0;max-width:42ch}
+  .news-r{padding:44px 44px 46px;display:flex;flex-direction:column;justify-content:center;
+    border-left:1px solid rgba(255,255,255,.1);position:relative}
+  .field{display:flex;gap:10px;margin-bottom:14px}
+  .field input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);
+    border-radius:3px;padding:13px 15px;color:var(--hero-text);font-family:var(--mono);font-size:13px}
+  .field input::placeholder{color:rgba(237,236,230,.45)}
+  .field input:focus{outline:none;border-color:var(--gold)}
+  .field button{background:var(--gold);color:var(--ink);border:none;border-radius:3px;
+    font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    padding:0 20px;cursor:pointer;transition:background .15s}
+  .field button:hover{background:#fff}
+  .news-note{font-family:var(--mono);font-size:10.5px;color:rgba(237,236,230,.5);letter-spacing:.03em}
+  .news-ok{font-family:var(--mono);font-size:13px;color:var(--gold);display:none}
+  .news-ok.show{display:block}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1.5px solid var(--ink);margin-top:56px;padding:40px 0 30px}
+  .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px;margin-bottom:34px}
+  .foot-brand .wordmark{font-size:26px;margin-bottom:10px}
+  .foot-brand p{font-size:15px;color:var(--ink-2);max-width:34ch;margin:0}
+  .foot-col h5{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:0 0 14px}
+  .foot-col a{display:block;font-family:var(--mono);font-size:12.5px;color:var(--ink-2);
+    padding:6px 0;letter-spacing:.02em}
+  .foot-col a:hover{color:var(--gold-deep)}
+  .foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;
+    padding-top:22px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.04em;flex-wrap:wrap}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:940px){
+    .lead{grid-template-columns:1fr}
+    .lead-main{border-right:none;padding:30px 0 34px}
+    .rail{padding:30px 0 40px;border-top:1px solid var(--line-strong)}
+    .news{grid-template-columns:1fr}
+    .news-r{border-left:none;border-top:1px solid rgba(255,255,255,.1);padding-top:32px}
+    .foot-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:720px){
+    body{font-size:17px}
+    .wrap{padding:0 20px}
+    .lead-sub{grid-template-columns:1fr}
+    .subart{border-right:none;padding:20px 0 4px;border-top:1px solid var(--line)}
+    .subart:last-child{padding-left:0}
+    .cards{grid-template-columns:1fr}
+    .card{border-right:none;padding:0;border-top:1px solid var(--line);padding-top:24px;margin-top:24px}
+    .card:first-child{border-top:none;margin-top:0;padding-top:0}
+    .foot-grid{grid-template-columns:1fr}
+    .hero-card{min-height:380px;padding:26px 22px 30px}
+  }
+
+  a:focus-visible,button:focus-visible,input:focus-visible{
+    outline:2.5px solid var(--gold);outline-offset:2px;border-radius:2px;
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    .signal i,.live-dot,.ticker-move,.dots span{animation:none!important}
+    .signal i{height:16px}
+    .ticker-move{transform:none}
+    .ticker-track{overflow-x:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- Utility bar -->
+<div class="util">
+  <div class="wrap util-inner">
+    <span class="util-date">QUI · 30 JUL 2026</span>
+    <span class="util-latest">ÚLTIMA: <b>Consulta pública europeia sobre transparência de dados de treino entra na reta final</b></span>
+    <span class="util-tag">SÃO PAULO · PT-BR</span>
+  </div>
+</div>
+
+<!-- Masthead -->
+<header class="mast">
+  <div class="wrap mast-inner">
+    <a class="brand" href="#">
+      <div class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="mast-brand-col">
+        <div class="wordmark">SIN<span>A</span>L</div>
+        <div class="tagline">Inteligência artificial, decodificada</div>
+      </div>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav" id="nav">
+      <a href="#pesquisa">Pesquisa</a>
+      <a href="#produtos">Produtos</a>
+      <a href="#regulacao">Regulação</a>
+      <a href="#negocios">Negócios</a>
+      <a href="#" class="btn-sub">Assinar</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Live ticker -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-label"><span class="live-dot" aria-hidden="true"></span> Ao vivo</div>
+    <div class="ticker-track">
+      <div class="ticker-move" id="tick">
+        <a href="#">Custo por token cai 40% e reacende guerra de preços entre provedores</a>
+        <a href="#">Modelos on-device passam a rodar em celulares intermediários</a>
+        <a href="#">Hospitais ampliam pilotos de copilotos clínicos sob supervisão médica</a>
+        <a href="#">Comunidade cobra benchmarks mais próximos de tarefas do mundo real</a>
+        <a href="#">Robôs de baixo custo ganham cérebro de LLM e viram febre entre makers</a>
+        <a href="#">Reguladores debatem rótulo obrigatório para conteúdo sintético</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lead -->
+<main class="wrap">
+  <div class="lead">
+    <div class="lead-main">
+      <article class="hero-card">
+        <div class="grid-lines" aria-hidden="true"></div>
+        <span class="hero-kicker">Pesquisa · Agentes</span>
+        <h1 class="hero-h">Os agentes autônomos saíram do laboratório. As empresas ainda não sabem quem responde por eles.</h1>
+        <p class="hero-stand">Sistemas que planejam, executam e corrigem o próprio trabalho já operam em fluxos reais — mas governança, auditoria e responsabilidade ficaram para trás. Um mapa do que muda quando o software passa a agir sozinho.</p>
+        <div class="hero-meta">
+          <span class="by">Por Redação SINAL</span>
+          <span>·</span>
+          <span>Leitura de 8 min</span>
+          <span>·</span>
+          <span>Há 2 horas</span>
+        </div>
+      </article>
+
+      <div class="lead-sub">
+        <div class="subart">
+          <span class="eyebrow">Infraestrutura</span>
+          <h3><a href="#">A conta da inferência está reescrevendo o plano de negócios das startups</a></h3>
+          <p>Quando cada resposta tem preço, arquitetura vira estratégia — e nem todo produto sobrevive à margem.</p>
+        </div>
+        <div class="subart">
+          <span class="eyebrow">Open-weight</span>
+          <h3><a href="#">Modelos abertos encurtam a distância e forçam os fechados a se explicar</a></h3>
+          <p>A diferença de desempenho diminui; a disputa migra para dados, ferramentas e confiança.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="rail">
+      <div class="rail-block">
+        <h4>Em alta <span class="mono" style="font-size:9px;color:var(--ink-3)">24h</span></h4>
+        <ol class="trend">
+          <li><span class="num">1</span><a href="#">Pequeno e local: por que o “on-device” virou a nova corrida</a></li>
+          <li><span class="num">2</span><a href="#">O que muda com o rótulo obrigatório para conteúdo sintético</a></li>
+          <li><span class="num">3</span><a href="#">Avaliação de modelos entra em crise de credibilidade</a></li>
+          <li><span class="num">4</span><a href="#">Do código ao cuidado: IA clínica sai do piloto</a></li>
+          <li><span class="num">5</span><a href="#">A robótica caseira encontra os grandes modelos</a></li>
+        </ol>
+      </div>
+
+      <div class="rail-block">
+        <h4>Bolsa de Modelos</h4>
+        <div class="board">
+          <div class="board-head">
+            <span class="t">Índice de atenção</span>
+            <span class="s">ilustrativo · 24h</span>
+          </div>
+          <div class="board-row"><span class="name">RACIOCÍNIO</span><span class="val"><span class="idx">128,4</span><span class="chg up"><span class="ar">▲</span>3,2%</span></span></div>
+          <div class="board-row"><span class="name">CÓDIGO</span><span class="val"><span class="idx">142,7</span><span class="chg up"><span class="ar">▲</span>5,8%</span></span></div>
+          <div class="board-row"><span class="name">OPEN-WEIGHT</span><span class="val"><span class="idx">96,1</span><span class="chg up"><span class="ar">▲</span>1,4%</span></span></div>
+          <div class="board-row"><span class="name">VISÃO</span><span class="val"><span class="idx">88,3</span><span class="chg down"><span class="ar">▼</span>0,9%</span></span></div>
+          <div class="board-row"><span class="name">VOZ</span><span class="val"><span class="idx">74,6</span><span class="chg down"><span class="ar">▼</span>2,1%</span></span></div>
+          <div class="board-row"><span class="name">AGENTES</span><span class="val"><span class="idx">159,2</span><span class="chg up"><span class="ar">▲</span>7,3%</span></span></div>
+        </div>
+      </div>
+
+      <div class="rail-block">
+        <div class="brief">
+          <div class="bh"><span class="tag">IA</span></div>
+          <h4>Briefing do dia</h4>
+          <p class="desc">O SINAL busca as manchetes de IA de hoje na web e resume em 30 segundos.</p>
+          <button class="brief-btn" id="briefBtn">Gerar briefing ao vivo</button>
+          <div class="brief-out" id="briefOut"></div>
+          <div class="brief-foot" id="briefFoot" style="display:none">Gerado por IA · com busca ao vivo</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Pesquisa -->
+  <section class="section" id="pesquisa">
+    <div class="sec-head">
+      <h2>Pesquisa</h2><span class="rule"></span><a href="#" class="more">Ver tudo →</a>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <div class="thumb"><span class="cat">Avaliação</span><div class="g1" style="position:absolute;inset:0"></div></div>
+        <span class="k">Benchmarks</span>
+        <h3><a href="#">Os testes que usamos para medir IA já não medem o que importa</a></h3>
+        <p>Pesquisadores propõem avaliações vivas, com tarefas que mudam para acompanhar o mundo real.</p>
+        <div class="foot"><span>Pesquisa</span><span>6 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Eficiência</span><div class="g2" style="position:absolute;inset:0"></div></div>
+        <span class="k">Modelos pequenos</span>
+        <h3><a href="#">Menos parâmetros, mais utilidade: a virada do “small is enough”</a></h3>
+        <p>Modelos compactos afinados para um domínio superam gigantes generalistas em tarefas específicas.</p>
+        <div class="foot"><span>Pesquisa</span><span>5 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Memória</span><div class="g3" style="position:absolute;inset:0"></div></div>
+        <span class="k">Contexto longo</span>
+        <h3><a href="#">Janelas gigantes de contexto esbarram no custo — e na atenção</a></h3>
+        <p>Mais tokens nem sempre significam mais compreensão; o desafio é o que o modelo escolhe lembrar.</p>
+        <div class="foot"><span>Pesquisa</span><span>7 min</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Produtos -->
+  <section class="section" id="produtos">
+    <div class="sec-head">
+      <h2>Produtos</h2><span class="rule"></span><a href="#" class="more">Ver tudo →</a>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <div class="thumb"><span class="cat">Dev</span><div class="g6" style="position:absolute;inset:0"></div></div>
+        <span class="k">Ferramentas</span>
+        <h3><a href="#">Assistentes de código deixam de sugerir e passam a entregar</a></h3>
+        <p>A fronteira agora é o fluxo inteiro: da issue ao pull request, com o dev no comando.</p>
+        <div class="foot"><span>Produtos</span><span>4 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Mobile</span><div class="g5" style="position:absolute;inset:0"></div></div>
+        <span class="k">On-device</span>
+        <h3><a href="#">IA no bolso: modelos locais chegam a aparelhos intermediários</a></h3>
+        <p>Privacidade e latência baixas viram o argumento de venda de uma nova geração de apps.</p>
+        <div class="foot"><span>Produtos</span><span>5 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Robótica</span><div class="g4" style="position:absolute;inset:0"></div></div>
+        <span class="k">Makers</span>
+        <h3><a href="#">Robôs de baixo custo ganham cérebro de LLM e viram febre</a></h3>
+        <p>Plataformas acessíveis somadas a modelos de linguagem aproximam a robótica de quem programa em casa.</p>
+        <div class="foot"><span>Produtos</span><span>6 min</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Regulação -->
+  <section class="section" id="regulacao">
+    <div class="sec-head">
+      <h2>Regulação</h2><span class="rule"></span><a href="#" class="more">Ver tudo →</a>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <div class="thumb"><span class="cat">Europa</span><div class="g2" style="position:absolute;inset:0"></div></div>
+        <span class="k">Transparência</span>
+        <h3><a href="#">Consulta sobre dados de treino entra na reta final</a></h3>
+        <p>Em jogo: o quanto as empresas precisarão revelar sobre o que alimenta seus modelos.</p>
+        <div class="foot"><span>Regulação</span><span>7 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Conteúdo</span><div class="g4" style="position:absolute;inset:0"></div></div>
+        <span class="k">Rotulagem</span>
+        <h3><a href="#">Rótulo obrigatório para mídia sintética avança em vários países</a></h3>
+        <p>Marcas d’água e metadados viram exigência — e desafio técnico de fiscalização.</p>
+        <div class="foot"><span>Regulação</span><span>5 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Brasil</span><div class="g3" style="position:absolute;inset:0"></div></div>
+        <span class="k">Marco legal</span>
+        <h3><a href="#">O debate brasileiro sobre IA busca equilíbrio entre risco e inovação</a></h3>
+        <p>Setores produtivos e sociedade civil disputam o desenho das regras que virão.</p>
+        <div class="foot"><span>Regulação</span><span>8 min</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Negócios -->
+  <section class="section" id="negocios">
+    <div class="sec-head">
+      <h2>Negócios</h2><span class="rule"></span><a href="#" class="more">Ver tudo →</a>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <div class="thumb"><span class="cat">Startups</span><div class="g1" style="position:absolute;inset:0"></div></div>
+        <span class="k">Unit economics</span>
+        <h3><a href="#">Quando cada resposta custa dinheiro, a margem vira produto</a></h3>
+        <p>Fundadores reaprendem a precificar num mundo em que o insumo principal é computação.</p>
+        <div class="foot"><span>Negócios</span><span>6 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Empresas</span><div class="g5" style="position:absolute;inset:0"></div></div>
+        <span class="k">Adoção</span>
+        <h3><a href="#">Depois do encanto, as empresas cobram retorno claro da IA</a></h3>
+        <p>Pilotos viram exigência de resultado; o CFO entra na conversa que era só do time técnico.</p>
+        <div class="foot"><span>Negócios</span><span>5 min</span></div>
+      </article>
+      <article class="card">
+        <div class="thumb"><span class="cat">Trabalho</span><div class="g6" style="position:absolute;inset:0"></div></div>
+        <span class="k">Talentos</span>
+        <h3><a href="#">A nova vaga mais disputada não é de quem treina modelos, é de quem os aplica</a></h3>
+        <p>Engenharia de produto com IA vira o gargalo — e a habilidade mais valorizada do mercado.</p>
+        <div class="foot"><span>Negócios</span><span>7 min</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <section class="news">
+    <div class="news-l">
+      <span class="eyebrow">A newsletter do SINAL</span>
+      <h2>O ruído é grande. Mande só o sinal.</h2>
+      <p>Uma edição por dia útil, às 7h, com o que aconteceu em IA e por que importa. Sem hype, sem thread infinita.</p>
+    </div>
+    <div class="news-r">
+      <div class="field">
+        <input type="email" id="email" placeholder="seu@email.com" aria-label="Seu e-mail">
+        <button id="subBtn">Assinar</button>
+      </div>
+      <div class="news-note" id="subNote">Grátis. Cancele quando quiser.</div>
+      <div class="news-ok" id="subOk">✓ Pronto — confirme no seu e-mail.</div>
+    </div>
+  </section>
+</main>
+
+<!-- Footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="wordmark">SIN<span>A</span>L</div>
+        <p>Jornalismo de inteligência artificial em português. Explicamos o que muda — para quem constrói, decide e usa.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Editorias</h5>
+        <a href="#pesquisa">Pesquisa</a>
+        <a href="#produtos">Produtos</a>
+        <a href="#regulacao">Regulação</a>
+        <a href="#negocios">Negócios</a>
+      </div>
+      <div class="foot-col">
+        <h5>Institucional</h5>
+        <a href="#">Sobre</a>
+        <a href="#">Padrões editoriais</a>
+        <a href="#">Contato</a>
+        <a href="#">Anuncie</a>
+      </div>
+      <div class="foot-col">
+        <h5>Siga</h5>
+        <a href="#">Newsletter</a>
+        <a href="#">RSS</a>
+        <a href="#">Podcast</a>
+        <a href="#">Bluesky</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 SINAL · Todos os direitos reservados</span>
+      <span>Demonstração de design · conteúdo ilustrativo</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile menu
+  const mt = document.getElementById('menuToggle');
+  const nav = document.getElementById('nav');
+  mt.addEventListener('click', () => {
+    const open = nav.classList.toggle('open');
+    mt.setAttribute('aria-expanded', open);
+  });
+  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    nav.classList.remove('open'); mt.setAttribute('aria-expanded', false);
+  }));
+
+  // Duplicate ticker content for seamless loop
+  const tick = document.getElementById('tick');
+  tick.innerHTML += tick.innerHTML;
+
+  // Newsletter
+  const subBtn = document.getElementById('subBtn');
+  subBtn.addEventListener('click', () => {
+    const email = document.getElementById('email');
+    if (email.value && email.value.includes('@')) {
+      document.getElementById('subNote').style.display = 'none';
+      document.getElementById('subOk').classList.add('show');
+      email.value = '';
+    } else {
+      email.focus();
+    }
+  });
+
+  // ---- Briefing ao vivo (Anthropic API + web search) ----
+  const briefBtn = document.getElementById('briefBtn');
+  const briefOut = document.getElementById('briefOut');
+  const briefFoot = document.getElementById('briefFoot');
+
+  briefBtn.addEventListener('click', async () => {
+    briefBtn.disabled = true;
+    briefBtn.innerHTML = '<span class="dots"><span></span><span></span><span></span></span> Buscando na web';
+    briefOut.classList.remove('show');
+    briefOut.innerHTML = '';
+    briefFoot.style.display = 'none';
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: "Busque na web as notícias mais importantes de inteligência artificial de hoje (ou desta semana). Depois escreva um briefing em português do Brasil com exatamente 3 itens. Responda SOMENTE com os 3 itens, um por linha, cada linha no formato: Título curto :: uma frase de contexto. Sem numeração, sem markdown, sem introdução, sem conclusão, sem citações entre colchetes."
+          }],
+          tools: [{ type: "web_search_20250305", name: "web_search" }]
+        })
+      });
+      const data = await res.json();
+
+      const text = (data.content || [])
+        .filter(b => b.type === "text")
+        .map(b => b.text)
+        .join("\n")
+        .trim();
+
+      if (!text) throw new Error("empty");
+
+      const lines = text.split("\n").map(l => l.trim())
+        .filter(l => l && l.includes("::"));
+
+      briefOut.innerHTML = "";
+      if (lines.length) {
+        lines.slice(0, 3).forEach(l => {
+          const [t, c] = l.split("::");
+          const item = document.createElement("div");
+          item.className = "brief-item";
+          item.innerHTML =
+            '<p class="it-t"></p><p class="it-c"></p>';
+          item.querySelector(".it-t").textContent = (t || "").replace(/^[-•\d.\s]+/, "").trim();
+          item.querySelector(".it-c").textContent = (c || "").trim();
+          briefOut.appendChild(item);
+        });
+      } else {
+        const p = document.createElement("div");
+        p.className = "brief-plain";
+        p.textContent = text.replace(/\[[^\]]*\]/g, "").trim();
+        briefOut.appendChild(p);
+      }
+
+      briefOut.classList.add("show");
+      briefFoot.style.display = "block";
+    } catch (e) {
+      briefOut.innerHTML = '<div class="brief-plain">Não consegui buscar o briefing agora. Tente de novo em instantes.</div>';
+      briefOut.classList.add("show");
+    } finally {
+      briefBtn.disabled = false;
+      briefBtn.textContent = "Gerar briefing ao vivo";
+    }
+  });
+</script>
+</body>
+</html>

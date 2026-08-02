@@ -1,0 +1,120 @@
+1 - NOTICIAS RELEVANTES SOBRE IA 
+
+MIT Technology Review — technologyreview.com
+Wired — wired.com
+MIT News — news.mit.edu
+The Verge — theverge.com
+
+Portais dedicados a IA (mercado, lançamentos, funding)
+
+VentureBeat (AI) — venturebeat.com/category/ai
+TechCrunch (AI) — techcrunch.com/category/artificial-intelligence
+AI News — artificialintelligence-news.com
+AI Magazine — aimagazine.com
+Analytics Insight — analyticsinsight.net
+AI Weekly — aiweekly.co
+Future Tools — futuretools.io/news
+
+Técnico / pesquisa / ML
+
+The Batch (DeepLearning.AI) — deeplearning.ai/the-batch
+Analytics Vidhya — analyticsvidhya.com
+Import AI (Jack Clark) — importai.substack.com
+Hacker News — news.ycombinator.com
+
+Blogs primários dos laboratórios (fonte oficial)
+
+Anthropic — anthropic.com/news
+OpenAI — openai.com/news
+Google DeepMind — deepmind.google/discover/blog
+Meta AI — ai.meta.com/blog
+Microsoft AI — blogs.microsoft.com/ai
+
+Brasil
+
+AINEWS — ainews.net.br
+IA Brasil Notícias — iabrasilnoticias.com.br
+CNN Brasil (IA) — cnnbrasil.com.br/tudo-sobre/inteligencia-artificial
+Olhar Digital — olhardigital.com.br
+Tecmundo — tecmundo.com.br
+Canaltech — canaltech.com.br
+Folha Artificial (newsletter) — folhaartificial.substack.com
+
+
+2 - DESENVOLVIMENTO DE SOFTWARE COM IA
+
+InfoQ — infoq.com
+The New Stack — thenewstack.io
+SD Times — sdtimes.com
+Developer Tech News — developer-tech.com
+
+Internacionais — mercado, lançamentos e tendências
+
+TechCrunch (AI) — techcrunch.com/category/artificial-intelligence
+AI News — artificialintelligence-news.com
+AI Weekly — aiweekly.co
+
+Blogs primários (fonte oficial de releases)
+
+.NET Blog — devblogs.microsoft.com/dotnet
+GitHub Blog — github.blog
+Anthropic — anthropic.com/news
+OpenAI — openai.com/news
+Google DeepMind — deepmind.google/discover/blog
+
+
+Brasil — dev
+
+ComputerWeekly Brasil — computerweekly.com/br
+iMasters — imasters.com.br
+Alura (blog) — alura.com.br/artigos
+
+Brasil — portais dedicados a IA
+
+AINEWS — ainews.net.br
+IA Brasil Notícias — iabrasilnoticias.com.br
+
+Brasil — tech geral com boa cobertura de IA
+
+TechTudo — techtudo.com.br
+Tecmundo — tecmundo.com.br
+Canaltech — canaltech.com.br
+Olhar Digital — olhardigital.com.br
+
+
+3 - GERENCIA DE PROJETO DE SOFTWARE COM IA
+
+The Digital Project Manager — thedigitalprojectmanager.com
+PMI — pmi.org (seção de IA: pmi.org/learning/ai-in-project-management)
+ProjectManagement.com — projectmanagement.com
+
+Ponte com engenharia / liderança técnica
+
+InfoQ (Culture & Methods) — infoq.com/culture-methods
+Toptal — Project Management blog — toptal.com/project-managers/blog
+
+Brasil
+
+PMI Brasil e capítulos regionais — pmi.org.br
+ComputerWeekly Brasil — computerweekly.com/br
+iMasters — imasters.com.br
+Alura (blog) — alura.com.br/artigos
+
+
+4 - GERAL
+https://techcrunch.com/category/artificial-intelligence/?utm_source=chatgpt.com
+https://www.theverge.com/ai-artificial-intelligence?utm_source=chatgpt.com
+https://arstechnica.com/ai/?utm_source=chatgpt.com
+https://www.infoq.com?utm_source=chatgpt.com
+https://thenewstack.io?utm_source=chatgpt.com
+https://www.anthropic.com/news?utm_source=chatgpt.com
+https://blog.google/technology/ai/?utm_source=chatgpt.com
+https://tldr.tech/ai?utm_source=chatgpt.com
+https://www.deeplearning.ai/the-batch/?utm_source=chatgpt.com
+https://openai.com/news/?utm_source=chatgpt.com
+https://news.ycombinator.com?utm_source=chatgpt.com
+https://github.com/trending?utm_source=chatgpt.com
+
+Brasil: G1 Tecnologia, Tecnoblog, Olhar Digital, Canaltech
+
+Mundo: The Verge (AI), MIT Technology Review, TechCrunch, Ars Technica, VentureBeat, InfoWorld, InfoQ, LeadDev, blog oficial da OpenAI, blog da Anthropic, Hugging Face blog

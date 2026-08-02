@@ -1,0 +1,22 @@
+{#
+  Retorno do POST /api/ingest. Um banner no estilo hero + auto-refresh da lista.
+#}
+<div class="ingest-banner"
+     hx-get="/articles?categoria={{ selected_category or 'todas' }}"
+     hx-trigger="load delay:200ms"
+     hx-target="#article-list"
+     hx-swap="innerHTML">
+  <span class="ok">✓ Ingest concluído</span>
+  <span class="stat">Salvas <b>{{ summary.saved }}</b></span>
+  <span class="stat">IA <b>{{ summary.by_category.ia }}</b> · Eng <b>{{ summary.by_category.eng_dev_ia }}</b> · Gestão <b>{{ summary.by_category.gestao_ia }}</b></span>
+  <span class="stat">Lidas <b>{{ summary.fetched }}</b></span>
+  <span class="stat">Duplicadas <b>{{ summary.skipped_duplicates }}</b></span>
+  <span class="stat">Antigas <b>{{ summary.skipped_old }}</b></span>
+  {% if summary.skipped_offtopic %}<span class="stat">Fora de tema <b>{{ summary.skipped_offtopic }}</b></span>{% endif %}
+  <span class="stat">Irrelevantes <b>{{ summary.skipped_irrelevant }}</b></span>
+  {% if summary.skipped_dead_link %}<span class="stat">Links quebrados <b>{{ summary.skipped_dead_link }}</b></span>{% endif %}
+  {% if summary.errors %}<span class="warn">Erros: {{ summary.errors }}</span>{% endif %}
+  {% if summary.cap_reached %}
+    <span class="warn">Cap atingido — há mais para buscar. Clique novamente.</span>
+  {% endif %}
+</div>

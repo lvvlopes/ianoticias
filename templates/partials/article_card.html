@@ -1,0 +1,66 @@
+{#
+  Card de notícia (grade da home / seção de categoria).
+  Espera `article` no contexto + os globais CATEGORY_* do templating.
+#}
+<article class="card" data-more-box>
+  {% set thumb_img = article.source_image_url or article.image_url %}
+  <div class="thumb {{ CATEGORY_THUMB_CLASS[article.category.value] }}{% if thumb_img %} thumb-img{% endif %}">
+    <span class="cat">{{ CATEGORY_LABELS[article.category.value] }}</span>
+    {% if article.featured %}<span class="featured-flag">Destaque</span>{% endif %}
+    {% if thumb_img %}
+      <img src="{{ thumb_img }}" alt="{{ article.ig_title }}" loading="lazy"
+           referrerpolicy="no-referrer" />
+    {% endif %}
+  </div>
+
+  <span class="k">{{ CATEGORY_KICKERS[article.category.value] }}</span>
+  <h3><a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">{{ article.ig_title }}</a></h3>
+
+  {# Só o 1º parágrafo aparece; o resto abre no "Veja mais". #}
+  {% set _paras = (article.ig_content or '').split('\n\n') %}
+  <p class="card-lead">{{ _paras[0] }}</p>
+  {% if _paras | length > 1 %}
+    <p class="more-text">{{ _paras[1:] | join('\n\n') }}</p>
+  {% endif %}
+
+  {% if article.hashtags %}
+    <p class="hashtags">
+      {% for tag in article.hashtags %}#{{ tag }}{% if not loop.last %} · {% endif %}{% endfor %}
+    </p>
+  {% endif %}
+
+  <div class="foot">
+    <span class="src" title="{{ article.source_name }}">{{ article.source_name }}</span>
+    <span>{{ article.published_at.strftime('%H:%M') }}</span>
+  </div>
+
+  <div class="actions">
+    <a class="btn-ghost" href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">
+      Ler matéria ↗
+    </a>
+    {% if _paras | length > 1 %}
+      <button type="button" class="btn-ghost" data-toggle-more>Veja mais</button>
+    {% endif %}
+    {% if is_admin %}
+      <button
+        class="btn-ghost btn-ig"
+        hx-post="/api/instagram/publish"
+        hx-vals='{"article_id": "{{ article.id }}"}'
+        hx-target="closest article"
+        hx-swap="outerHTML"
+        {% if article.ig_status.value == 'posted' %}disabled{% endif %}
+      >
+        {% if article.ig_status.value == 'posted' %}
+          ✓ Postado no IG
+        {% else %}
+          <span class="btn-idle">Postar IG</span>
+          <span class="btn-busy">Publicando<span class="dots"><i></i><i></i><i></i></span></span>
+        {% endif %}
+      </button>
+    {% else %}
+      <span class="btn-ghost" style="pointer-events:none">
+        {% if article.ig_status.value == 'posted' %}✓ Postado no IG{% else %}Rascunho{% endif %}
+      </span>
+    {% endif %}
+  </div>
+</article>

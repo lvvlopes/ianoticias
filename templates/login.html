@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Entrar — IANoticias{% endblock %}
+
+{% block content %}
+  <section style="max-width:440px;margin:70px auto 40px;">
+    <span class="eyebrow" style="display:block;margin-bottom:10px">Acesso restrito</span>
+    <h1 style="font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:-.02em;margin:0 0 8px">
+      Entrar como admin
+    </h1>
+    <p style="color:var(--ink-2);margin:0 0 28px">
+      A senha de administração libera o botão <b>Buscar Notícias</b> e a publicação no Instagram.
+    </p>
+
+    {% if error %}
+      <div style="background:rgba(216,72,63,.12);border:1px solid var(--neg);color:var(--neg);
+                  padding:12px 14px;border-radius:3px;font-family:var(--mono);font-size:12.5px;
+                  letter-spacing:.02em;margin-bottom:18px">
+        ✗ Senha incorreta.
+      </div>
+    {% endif %}
+
+    <form method="post" action="/login"
+          style="background:var(--panel);border:1.5px solid var(--ink);border-radius:4px;padding:22px">
+      <label style="display:block;font-family:var(--mono);font-size:11px;font-weight:600;
+                    letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:8px">
+        Senha
+      </label>
+      <input type="password" name="password" required autofocus
+             style="width:100%;background:var(--paper);border:1px solid var(--line-strong);
+                    border-radius:2px;padding:12px 14px;font-family:var(--mono);font-size:13.5px;
+                    color:var(--ink);letter-spacing:.02em;margin-bottom:16px" />
+      <button class="btn-primary" style="width:100%;justify-content:center" type="submit">
+        Entrar
+      </button>
+      <p style="font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.05em;
+                margin:14px 0 0;text-transform:uppercase">
+        A senha vem da variável <code>ADMIN_PASSWORD</code> do .env
+      </p>
+    </form>
+
+    <p style="margin-top:22px;font-size:14.5px;color:var(--ink-3)">
+      <a href="/" style="color:var(--gold-deep);border-bottom:1px solid var(--gold-deep);padding-bottom:1px">← Voltar ao portal</a>
+    </p>
+  </section>
+{% endblock %}

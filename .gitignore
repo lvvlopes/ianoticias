@@ -1,0 +1,28 @@
+# venv / build
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+
+# ambiente / segredos
+.env
+.env.local
+
+# Vercel
+.vercel/
+
+# Cards gerados em modo mock (dev local)
+static/mock_cards/
+
+# Fontes proprietárias — não commitar
+static/fonts/*.ttf
+static/fonts/*.otf
+!static/fonts/README.md
+
+# IDEs
+.vscode/
+.idea/

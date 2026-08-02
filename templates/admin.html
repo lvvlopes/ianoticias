@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Admin — IANoticias{% endblock %}
+
+{% block head_extra %}
+<style>
+  .admin-wrap{padding:34px 0 60px}
+  .admin-h{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:-.02em;margin:0 0 6px}
+  .admin-sub{color:var(--ink-2);margin:0 0 30px;font-size:16px}
+
+  .adm-section{border-top:1.5px solid var(--ink);padding-top:22px;margin-top:40px}
+  .adm-section:first-of-type{border-top:none;margin-top:0}
+  .adm-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+  .adm-head h2{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.015em;margin:0}
+  .adm-head .rule{flex:1;height:1px;background:var(--line-strong)}
+  .adm-head .badge{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:3px 8px;border-radius:2px}
+  .badge-edit{background:var(--gold);color:var(--ink)}
+  .badge-lock{background:var(--panel);border:1.5px solid var(--ink);color:var(--ink)}
+
+  .saved-flash{background:var(--hero);color:var(--green);font-family:var(--mono);font-size:12px;letter-spacing:.03em;
+    padding:11px 16px;border-radius:3px;margin-bottom:24px;text-transform:uppercase}
+
+  /* Tabela de feeds */
+  table.feeds{width:100%;border-collapse:collapse;font-size:14px}
+  table.feeds th{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-3);text-align:left;padding:8px 10px;border-bottom:1.5px solid var(--ink)}
+  table.feeds td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.feeds input[type=text],table.feeds input[type=url],table.feeds select{
+    width:100%;background:var(--paper);border:1px solid var(--line-strong);border-radius:2px;
+    padding:7px 9px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+  table.feeds tr.disabled td{opacity:.5}
+  .col-actions{white-space:nowrap;text-align:right}
+  .dot-cat{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+  .mini{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    padding:6px 10px;border-radius:2px;border:1px solid var(--line-strong);background:transparent;color:var(--ink-2);cursor:pointer}
+  .mini:hover{color:var(--ink);border-color:var(--ink)}
+  .mini-danger:hover{color:var(--neg);border-color:var(--neg)}
+  .mini-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .mini-primary:hover{background:var(--gold-deep);border-color:var(--gold-deep);color:var(--paper)}
+
+  .add-row td{background:var(--panel);border-top:1.5px solid var(--ink)}
+
+  /* Prompts */
+  .prompt-field{margin-bottom:18px}
+  .prompt-field label{display:block;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink);margin-bottom:7px}
+  .prompt-field .hint{font-family:var(--serif);font-size:13.5px;color:var(--ink-3);margin:0 0 8px;text-transform:none;letter-spacing:0}
+  .prompt-field textarea{width:100%;background:var(--panel);border:1.5px solid var(--ink);border-radius:3px;
+    padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--ink);resize:vertical}
+  .prompt-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .placeholders{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.02em;margin-top:6px}
+  .placeholders code{background:var(--panel);border:1px solid var(--line);padding:1px 5px;border-radius:2px;color:var(--ink-2)}
+
+  /* Regras readonly */
+  .rules{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+  .rule-item{padding:13px 16px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+  .rule-item .k{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+  .rule-item .v{font-family:var(--serif);font-size:15px;color:var(--ink)}
+  @media(max-width:720px){.rules{grid-template-columns:1fr}.col-hide-sm{display:none}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+  <h1 class="admin-h">Painel de administração</h1>
+  <p class="admin-sub">Configure as fontes de busca e as regras de resumo/classificação do LLM. As regras do pipeline de pesquisa são fixas e exibidas apenas para consulta.</p>
+
+  {% if saved %}
+    <div class="saved-flash">✓ Alterações salvas{% if saved == 'prompt' %} — prompt do LLM atualizado{% elif saved == 'feed' %} — fontes atualizadas{% endif %}.</div>
+  {% endif %}
+
+  <!-- ===================== FONTES (editável) ===================== -->
+  <section class="adm-section">
+    <div class="adm-head">
+      <h2>Fontes de busca</h2>
+      <span class="rule"></span>
+      <span class="badge badge-edit">Editável</span>
+    </div>
+
+    <table class="feeds">
+      <thead>
+        <tr>
+          <th style="width:24%">Nome</th>
+          <th style="width:38%">URL do RSS/Atom</th>
+          <th style="width:10%" class="col-hide-sm">Região</th>
+          <th style="width:16%">Categoria (dica)</th>
+          <th style="width:12%" class="col-actions">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in feeds %}
+          <tr class="{% if not f.enabled %}disabled{% endif %}">
+            <form method="post" action="/admin/feeds/{{ f.id }}" id="feed-{{ f.id }}"></form>
+            <td><input form="feed-{{ f.id }}" type="text" name="name" value="{{ f.name }}" required></td>
+            <td><input form="feed-{{ f.id }}" type="url" name="url" value="{{ f.url }}" required></td>
+            <td class="col-hide-sm">
+              <select form="feed-{{ f.id }}" name="region">
+                <option value="br" {% if f.region == 'br' %}selected{% endif %}>BR</option>
+                <option value="world" {% if f.region == 'world' %}selected{% endif %}>Mundo</option>
+              </select>
+            </td>
+            <td>
+              <select form="feed-{{ f.id }}" name="hint">
+                {% for c in categories %}
+                  <option value="{{ c }}" {% if f.hint.value == c %}selected{% endif %}>{{ CATEGORY_SECTION_TITLES[c] }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="col-actions">
+              <label style="font-family:var(--mono);font-size:10px;display:inline-flex;align-items:center;gap:4px;margin-right:6px" title="Ativa">
+                <input form="feed-{{ f.id }}" type="checkbox" name="enabled" {% if f.enabled %}checked{% endif %}>
+              </label>
+              <button form="feed-{{ f.id }}" type="submit" class="mini mini-primary">Salvar</button>
+              <button type="submit" form="del-{{ f.id }}" class="mini mini-danger"
+                      onclick="return confirm('Excluir a fonte {{ f.name }}?')">Excluir</button>
+              <form method="post" action="/admin/feeds/{{ f.id }}/delete" id="del-{{ f.id }}" style="display:none"></form>
+            </td>
+          </tr>
+        {% endfor %}
+
+        <!-- Linha de adicionar -->
+        <tr class="add-row">
+          <form method="post" action="/admin/feeds" id="add-feed"></form>
+          <td><input form="add-feed" type="text" name="name" placeholder="Nome da fonte" required></td>
+          <td><input form="add-feed" type="url" name="url" placeholder="https://exemplo.com/feed.xml" required></td>
+          <td class="col-hide-sm">
+            <select form="add-feed" name="region">
+              <option value="world">Mundo</option>
+              <option value="br">BR</option>
+            </select>
+          </td>
+          <td>
+            <select form="add-feed" name="hint">
+              {% for c in categories %}
+                <option value="{{ c }}">{{ CATEGORY_SECTION_TITLES[c] }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="col-actions">
+            <button form="add-feed" type="submit" class="mini mini-primary">+ Adicionar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="placeholders">A coluna “Categoria” é apenas uma dica ao LLM; a classificação final é feita por matéria. Desmarque a caixa e salve para desativar uma fonte sem excluí-la.</p>
+  </section>
+
+  <!-- ===================== PROMPT DO LLM (editável) ===================== -->
+  <section class="adm-section">
+    <div class="adm-head">
+      <h2>Regras do LLM (resumo &amp; classificação)</h2>
+      <span class="rule"></span>
+      <span class="badge badge-edit">Editável</span>
+    </div>
+
+    <form method="post" action="/admin/prompt">
+      <div class="prompt-field">
+        <label>System prompt</label>
+        <p class="hint">Define o papel do modelo e o formato de saída (JSON).</p>
+        <textarea name="system_prompt" rows="4">{{ system_prompt }}</textarea>
+      </div>
+
+      <div class="prompt-field">
+        <label>Instruções / regras de classificação (user template)</label>
+        <p class="hint">As regras de escopo das 3 categorias, tamanho do título, nº de frases e hashtags. Use os placeholders abaixo — eles são preenchidos por matéria.</p>
+        <textarea name="user_template" rows="20">{{ user_template }}</textarea>
+        <p class="placeholders">Placeholders: <code>{hint}</code> <code>{title}</code> <code>{source_name}</code> <code>{source_url}</code> <code>{body}</code></p>
+      </div>
+
+      <div class="prompt-actions">
+        <button type="submit" class="btn-primary">Salvar prompt</button>
+        <button type="submit" class="mini mini-danger" formaction="/admin/prompt/reset"
+                onclick="return confirm('Restaurar o prompt para o padrão do código?')">Restaurar padrão</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===================== TOKEN DO INSTAGRAM ===================== -->
+  <section class="adm-section">
+    <div class="adm-head">
+      <h2>Token do Instagram</h2>
+      <span class="rule"></span>
+      <span class="badge badge-edit">Auto-renovável</span>
+    </div>
+    {% if ig_token_msg %}
+      <div class="saved-flash">{{ ig_token_msg }}</div>
+    {% endif %}
+    <div class="rules" style="margin-bottom:14px">
+      <div class="rule-item">
+        <div class="k">Instagram configurado</div>
+        <div class="v">{{ 'Sim' if ig_configured else 'Não (veja IG_USER_ID / IG_ACCESS_TOKEN no .env)' }}</div>
+      </div>
+      <div class="rule-item">
+        <div class="k">Último refresh do token</div>
+        <div class="v">
+          {% if ig_token_age is none %}Nunca renovado por aqui (usando o do .env)
+          {% else %}há {{ ig_token_age }} dia(s){% endif %}
+        </div>
+      </div>
+    </div>
+    <form method="post" action="/admin/ig/refresh-token">
+      <button type="submit" class="btn-primary">Renovar token agora</button>
+    </form>
+    <p class="placeholders">O token é renovado automaticamente ao publicar quando passa de 45 dias (a Meta dá ~60). Este botão força a renovação manual. Se falhar, gere um novo token com <code>scripts/ig_token.py</code>.</p>
+  </section>
+
+  <!-- ===================== REGRAS DE PESQUISA (readonly) ===================== -->
+  <section class="adm-section">
+    <div class="adm-head">
+      <h2>Regras do pipeline de pesquisa</h2>
+      <span class="rule"></span>
+      <span class="badge badge-lock">🔒 Somente leitura</span>
+    </div>
+    <div class="rules">
+      {% for r in rules %}
+        <div class="rule-item">
+          <div class="k">{{ r.label }}</div>
+          <div class="v">{{ r.value }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="placeholders">Estas regras são definidas no código/ambiente (env). Ajuste-as via variáveis de ambiente no deploy, não por esta tela.</p>
+  </section>
+</div>
+{% endblock %}
