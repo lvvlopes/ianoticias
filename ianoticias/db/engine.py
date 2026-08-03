@@ -1,14 +1,20 @@
 """Engine async (asyncpg) + sessionmaker.
 
-Cuidados específicos para Supabase/serverless:
-- Quando a connection string usa o pooler PgBouncer (porta 6543, transaction
-  mode), o asyncpg NÃO pode usar prepared statements com cache. Detectamos a
-  porta 6543 e desligamos o cache.
-- Parseamos a DATABASE_URL com urlparse e reconstruímos com URL.create(), pois
-  o parser interno do SQLAlchemy pode embaralhar hostname/senha quando a senha
-  tem caracteres especiais (@, #, /, :, %) — vimos isso quebrar a resolução
-  de DNS na prática.
-- pool_pre_ping evita conexões mortas entre invocações da função.
+Cuidados específicos para Supabase (pooler PgBouncer, porta 6543, transaction
+mode) + serverless (Vercel):
+
+- PgBouncer transaction mode recicla conexões de servidor entre transações. Isso
+  bagunça prepared statements: um statement preparado numa conexão pode não
+  existir na próxima (ou colidir com outro). Combate isso com:
+    (a) statement_cache_size=0
+    (b) prepared_statement_name_func com UUID (evita colisão de nomes)
+    (c) NullPool (cada request abre/fecha sua conexão — combina com serverless
+        e elimina o problema de "statement preparado numa conexão do pool,
+        executado em outra depois do reset do PgBouncer")
+
+- Parseamos a DATABASE_URL com urlparse e reconstruímos com URL.create(): o
+  parser interno do SQLAlchemy embaralha hostname/senha quando a senha tem
+  caracteres especiais (@, #, /, :, %) — vimos isso quebrar a resolução de DNS.
 """
 from __future__ import annotations
 
@@ -23,6 +29,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from ianoticias.config.settings import settings
 
@@ -69,26 +76,27 @@ def _build_engine() -> AsyncEngine:
     url = _to_sqlalchemy_url(settings.database_url)
 
     connect_args: dict = {}
-    # PgBouncer (transaction mode) reusa conexões de servidor entre transações,
-    # então prepared statements com nome fixo colidem ("DuplicatePreparedStatement").
-    # Correção robusta (recomendada pela doc do SQLAlchemy p/ pgbouncer):
-    #   1) desligar o cache de statements do asyncpg (statement_cache_size=0);
-    #   2) gerar um NOME ÚNICO por prepared statement (name_func com uuid).
+    engine_kwargs: dict = {"echo": False}
+
     is_pooler = (url.port == 6543) or ("pgbouncer=true" in settings.database_url)
     if is_pooler:
+        # PgBouncer transaction mode: desliga cache e usa nomes únicos por
+        # prepared statement (evita colisão) — E usa NullPool (cada request
+        # abre/fecha sua conexão, o que combina com serverless e elimina o
+        # "statement preparado numa conexão, executado em outra depois do
+        # reset do PgBouncer").
         connect_args["statement_cache_size"] = 0
         connect_args["prepared_statement_name_func"] = (
             lambda: f"__asyncpg_{uuid.uuid4()}__"
         )
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        # Conexão direta (dev/local): pool normal é ok.
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_size"] = 5
+        engine_kwargs["max_overflow"] = 5
 
-    return create_async_engine(
-        url,
-        echo=False,
-        pool_pre_ping=True,
-        pool_size=5,
-        max_overflow=5,
-        connect_args=connect_args,
-    )
+    return create_async_engine(url, connect_args=connect_args, **engine_kwargs)
 
 
 def get_engine() -> AsyncEngine:
