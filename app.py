@@ -19,11 +19,14 @@ STATIC_DIR = BASE_DIR / "static"
 app = FastAPI(title="IANoticias", docs_url=None, redoc_url=None)
 
 # Sessão assinada em cookie (usada para o login de admin).
+# https_only vira True automaticamente em produção HTTPS (Vercel define VERCEL_ENV).
+import os as _os  # noqa: E402
+_is_prod_https = _os.getenv("VERCEL_ENV") == "production"
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
     same_site="lax",
-    https_only=False,  # em produção (HTTPS) pode ser True
+    https_only=_is_prod_https,
 )
 
 # Arquivos estáticos (fontes do card, favicon, etc.).

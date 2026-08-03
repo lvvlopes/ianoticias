@@ -442,6 +442,26 @@
     const open = box.classList.toggle('expanded');
     btn.textContent = open ? 'Ver menos' : 'Veja mais';
   });
+
+  // Exibe erros do HTMX (ex.: 502 do publish do Instagram) no lugar do botão,
+  // em vez de deixar "Publicando..." travado sem feedback.
+  document.body.addEventListener('htmx:responseError', function (evt) {
+    const el = evt.detail.elt;
+    const article = el && el.closest ? el.closest('article') : null;
+    let msg = 'Falha ao publicar';
+    try {
+      const body = evt.detail.xhr && evt.detail.xhr.responseText;
+      if (body && body.trim().startsWith('{')) {
+        const j = JSON.parse(body);
+        if (j.detail) msg = j.detail;
+      }
+    } catch (_) {}
+    const status = evt.detail.xhr ? evt.detail.xhr.status : '';
+    alert('Erro ' + status + ': ' + msg);
+    // libera o botão travado em "Publicando..."
+    if (el && el.hasAttribute('disabled')) el.removeAttribute('disabled');
+    el && el.classList && el.classList.remove('htmx-request');
+  });
 </script>
 
 </body>

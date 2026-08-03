@@ -383,14 +383,23 @@ CATEGORY_POST_LABEL = {
 
 
 def _load_instagram_bg(category: str) -> Image.Image:
-    """Fundo do card: imagem fixa de marca intagram.jpg → default.jpg → gradiente."""
+    """Fundo do card: imagem fixa intagram.jpg → default.jpg → fundo sólido rápido.
+
+    O fallback é intencionalmente BARATO (Image.new) porque `_build_hero_bg` faz
+    filtros/blurs pesados em pixel e pode explodir o tempo de função na Vercel.
+    """
+    import logging
+    log = logging.getLogger(__name__)
     for path in (INSTAGRAM_BG, DEFAULT_BG):
-        if path.exists():
-            try:
+        try:
+            if path.exists():
                 return _cover(Image.open(path).convert("RGB"), CARD_SIZE)
-            except Exception:  # noqa: BLE001
-                continue
-    return _build_hero_bg(category)  # último recurso
+            log.warning("image_card: fundo ausente em %s", path)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("image_card: falha ao abrir %s: %s", path, exc)
+    # Último recurso: fundo sólido na cor de acento da categoria (barato).
+    log.warning("image_card: usando fundo sólido de fallback para categoria %s", category)
+    return Image.new("RGB", CARD_SIZE, _hex_rgb(CATEGORY_COLORS.get(category, "#111017")))
 
 
 def _text_scrim(size: tuple[int, int]) -> Image.Image:
