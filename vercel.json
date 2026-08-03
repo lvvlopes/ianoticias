@@ -1,7 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
-    { "src": "app.py", "use": "@vercel/python" }
+    {
+      "src": "app.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "{static/**,templates/**,ianoticias/**,migrations/**}"
+      }
+    }
   ],
   "routes": [
     { "src": "/static/(.*)", "dest": "/static/$1" },

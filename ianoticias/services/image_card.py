@@ -113,7 +113,15 @@ def _load_font(chain: tuple[str, ...], size: int):
             return ImageFont.truetype(sp, size=size)
         except OSError:
             continue
-    # 3) Default do Pillow, JÁ dimensionado (Pillow >= 10.1 aceita size).
+    # 3) Default do Pillow (bitmap ASCII, SEM acentos) — última alternativa.
+    #    Logar para saber, em produção, se as TTFs empacotadas não foram bundadas.
+    import logging
+    logging.getLogger(__name__).warning(
+        "image_card: nenhuma TTF encontrada para chain=%s size=%d; "
+        "caindo no load_default (SEM acentos). FONT_DIR=%s exists=%s files=%s",
+        chain, size, FONT_DIR, FONT_DIR.exists(),
+        [p.name for p in FONT_DIR.iterdir()] if FONT_DIR.exists() else "N/A",
+    )
     try:
         return ImageFont.load_default(size=size)
     except TypeError:  # Pillow antigo

@@ -18,10 +18,15 @@ dist/
 # Cards gerados em modo mock (dev local)
 static/mock_cards/
 
-# Fontes proprietárias — não commitar
+# Fontes: bloqueia genericamente para não commitar fontes proprietárias por acidente,
+# mas libera as DejaVu (SIL OFL, livres) que garantem suporte a acentos no card do IG.
 static/fonts/*.ttf
 static/fonts/*.otf
 !static/fonts/README.md
+!static/fonts/DejaVuSans-Bold.ttf
+!static/fonts/DejaVuSans.ttf
+!static/fonts/DejaVuSansMono-Bold.ttf
+!static/fonts/DejaVuSansMono.ttf
 
 # IDEs
 .vscode/
