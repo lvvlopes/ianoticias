@@ -349,6 +349,31 @@ def _scrim(size: tuple[int, int]) -> Image.Image:
     return scrim
 
 
+def _fit_title_block(
+    draw, text, max_width: int, max_height: int, max_lines: int = 6
+):
+    """Escolhe a MAIOR fonte cujo título quebrado caiba inteiro na caixa.
+
+    Diferente de `_wrap_to_lines`, não trunca enquanto houver um tamanho de
+    fonte menor que faça o texto completo caber — títulos longos encolhem em
+    vez de virar "…". Só como último recurso (título gigante) trunca no
+    número de linhas que couber na menor fonte.
+    """
+    for size in (60, 56, 52, 48, 44, 40, 36):
+        font = _load_font(DISPLAY_BOLD_CHAIN, size)
+        line_h = int(size * 1.23)
+        lines = _wrap_lines(draw, text, font, max_width)
+        if len(lines) <= max_lines and len(lines) * line_h <= max_height:
+            return lines, font, line_h
+    # Último recurso: menor fonte, truncando no que couber verticalmente.
+    size = 36
+    font = _load_font(DISPLAY_BOLD_CHAIN, size)
+    line_h = int(size * 1.23)
+    max_fit = max(1, max_height // line_h)
+    lines = _wrap_to_lines(draw, text, font, max_width, max_fit)
+    return lines, font, line_h
+
+
 def _wrap_to_lines(draw, text, font, max_width, max_lines) -> list[str]:
     words = (text or "").split()
     lines: list[str] = []
@@ -485,10 +510,13 @@ def build_card_jpeg(
     draw.rounded_rectangle((margin, accent_y, margin + 92, accent_y + 6), radius=3, fill=TEAL)
 
     # --- Título (bold, branco, com sombra p/ legibilidade) ---------------------
-    title_font = _load_font(DISPLAY_BOLD_CHAIN, 60)
-    lines = _wrap_to_lines(draw, title, title_font, title_max_w, 4)
-    line_h = 74
-    y = accent_y + 34
+    # A fonte encolhe para o título caber inteiro na coluna (sem cortar com "…").
+    title_top = accent_y + 34
+    title_bottom = CARD_SIZE[1] - 120  # respiro acima do rodapé (foot em -96)
+    lines, title_font, line_h = _fit_title_block(
+        draw, title, title_max_w, title_bottom - title_top
+    )
+    y = title_top
     for ln in lines:
         draw.text((margin + 2, y + 3), ln, font=title_font, fill=(0, 0, 0, 150))  # sombra
         draw.text((margin, y), ln, font=title_font, fill=TITLE_WHITE)
