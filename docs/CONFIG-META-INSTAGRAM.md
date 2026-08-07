@@ -156,6 +156,7 @@ mais frequentes:
 | `Session has expired on ...` | Token expirou | Rode `scripts/ig_token.py` de novo (você usou um curto) |
 | `Only photo or video can be accepted as media type` | Bucket privado ou imagem não-JPEG | Torne o bucket público, confirme JPEG |
 | `Media URL invalid or unreachable` | Meta não consegue baixar a URL | Bucket privado, DNS quebrado, ou HTTP em vez de HTTPS |
+| `Media ID is not available` | Publish disparado antes da Meta terminar de processar o container da imagem | Já resolvido no código: `_wait_for_container_ready` faz polling de `status_code` até `FINISHED` antes do publish |
 | `(#4) Application request limit reached` | Rate limit (~25 posts/24h) | Aguarde 1h ou reduza volume |
 | `Signature verification failed` (Storage) | Chave é de outro projeto | Ver [CONFIG-SUPABASE.md § 4](CONFIG-SUPABASE.md) |
 | `Falha de rede após 3 tentativas` | Rede local ou firewall/antivírus | Teste em outra rede |
