@@ -108,6 +108,53 @@ async def _graph_post(
     raise InstagramError(f"Graph API indisponível: {last_exc}")
 
 
+async def _graph_get(
+    client: httpx.AsyncClient, path: str, params: dict, token: str
+) -> dict:
+    url = f"https://graph.facebook.com/{settings.graph_api_version}/{path}"
+    resp = await client.get(url, params={**params, "access_token": token})
+    try:
+        body = resp.json()
+    except ValueError:
+        body = {"raw": resp.text}
+    if resp.status_code >= 400 or "error" in body:
+        msg = body.get("error", {}).get("message") or f"HTTP {resp.status_code}"
+        raise InstagramError(msg)
+    return body
+
+
+async def _wait_for_container_ready(
+    client: httpx.AsyncClient, creation_id: str, token: str,
+    *, max_seconds: float = 25.0, poll_every: float = 1.5,
+) -> None:
+    """Espera o container ficar FINISHED antes de publicar.
+
+    Sem esse polling, a Meta responde 'Media ID is not available' porque o
+    servidor deles ainda está baixando/processando a imagem enviada em
+    /media. `status_code` vira 'FINISHED' quando pronto ou 'ERROR' se algo
+    deu errado no lado da Meta (ex.: imagem inacessível).
+    """
+    import time
+    deadline = time.monotonic() + max_seconds
+    while time.monotonic() < deadline:
+        info = await _graph_get(
+            client, creation_id, {"fields": "status_code,status"}, token,
+        )
+        status = info.get("status_code")
+        if status == "FINISHED":
+            return
+        if status == "ERROR":
+            detail = info.get("status") or info
+            raise InstagramError(f"Processamento do container falhou: {detail}")
+        # 'IN_PROGRESS' ou 'PUBLISHED' (raro) ou vazio → continua esperando
+        await asyncio.sleep(poll_every)
+    raise InstagramError(
+        "Container ainda não processado após 25s. A Meta pode não ter "
+        "conseguido baixar a imagem — confirme se o bucket do Storage é "
+        "público e a URL retorna 200 image/jpeg."
+    )
+
+
 async def publish(*, image_url: str, caption: str, access_token: str | None = None) -> PublishResult:
     """Executa os dois passos da Graph API e retorna o id do media publicado."""
     token = access_token or settings.ig_access_token
@@ -125,6 +172,9 @@ async def publish(*, image_url: str, caption: str, access_token: str | None = No
         creation_id = container.get("id")
         if not creation_id:
             raise InstagramError("Resposta sem id de container.")
+
+        # 1.5) Espera a Meta terminar de processar (evita "Media ID is not available")
+        await _wait_for_container_ready(client, creation_id, token)
 
         # 2) Publish
         published = await _graph_post(
