@@ -90,6 +90,7 @@ async def admin_home(
             "ig_configured": settings.has_instagram,
             "ig_token_age": token_age,
             "ig_token_msg": request.query_params.get("igmsg"),
+            "vercel_analytics_url": settings.vercel_analytics_url,
         },
     )
 

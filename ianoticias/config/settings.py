@@ -62,6 +62,9 @@ class Settings:
     admin_password: str = os.getenv("ADMIN_PASSWORD", "")
     session_secret: str = os.getenv("SESSION_SECRET", "dev-insecure-secret-change-me")
     public_site_url: str = os.getenv("PUBLIC_SITE_URL", "http://localhost:8000")
+    # URL do painel de analytics externo (Vercel). Ex.:
+    # https://vercel.com/<user>/<projeto>/analytics
+    vercel_analytics_url: str = os.getenv("VERCEL_ANALYTICS_URL", "")
 
     # Pipeline
     ingest_max_items: int = field(default_factory=lambda: _int("INGEST_MAX_ITEMS", 12))

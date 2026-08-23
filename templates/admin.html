@@ -205,6 +205,35 @@
     <p class="placeholders">O token é renovado automaticamente ao publicar quando passa de 45 dias (a Meta dá ~60). Este botão força a renovação manual. Se falhar, gere um novo token com <code>scripts/ig_token.py</code>.</p>
   </section>
 
+  <!-- ===================== ANALYTICS (link externo) ===================== -->
+  <section class="adm-section">
+    <div class="adm-head">
+      <h2>Estatísticas do site</h2>
+      <span class="rule"></span>
+      <span class="badge badge-lock">🔗 Painel externo</span>
+    </div>
+    {% if vercel_analytics_url %}
+      <p style="font-size:15px;color:var(--ink-2);margin:0 0 14px">
+        Visitas, top páginas, referrers e países ficam no painel da Vercel
+        (sem cookies, LGPD-friendly). O snippet já está ativo no site.
+      </p>
+      <a href="{{ vercel_analytics_url }}" target="_blank" rel="noopener noreferrer"
+         class="btn-primary" style="text-decoration:none;display:inline-flex">
+        Abrir Vercel Analytics ↗
+      </a>
+    {% else %}
+      <p style="font-size:15px;color:var(--ink-2);margin:0 0 12px">
+        Para ver os dados de visitas, ative o Web Analytics no painel da Vercel
+        e configure a URL do painel via env <code>VERCEL_ANALYTICS_URL</code>
+        (formato: <code>https://vercel.com/&lt;user&gt;/&lt;projeto&gt;/analytics</code>).
+      </p>
+    {% endif %}
+    <p class="placeholders">
+      Se precisar de métricas dentro do produto (ranking de matérias por cliques,
+      referrers do IG etc.), dá para migrar para registro próprio no Supabase.
+    </p>
+  </section>
+
   <!-- ===================== REGRAS DE PESQUISA (readonly) ===================== -->
   <section class="adm-section">
     <div class="adm-head">
