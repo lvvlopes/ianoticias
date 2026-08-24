@@ -109,14 +109,20 @@ FEEDS: list[Feed] = [
     # ==========================================================================
 
     # ------------------------- Mundo (RSS confirmado) --------------------------
-    Feed("InfoQ — Culture & Methods", "https://feed.infoq.com/culture-methods/", "world", "gestao_ia"),
+    Feed("InfoQ — Culture & Methods",     "https://feed.infoq.com/culture-methods/",     "world", "gestao_ia"),
+    Feed("InfoQ — Agile",                 "https://feed.infoq.com/agile/",               "world", "gestao_ia"),
+    Feed("LeadDev",                       "https://leaddev.com/rss",                     "world", "gestao_ia"),
+    Feed("The Digital Project Manager",   "https://thedigitalprojectmanager.com/feed/",  "world", "gestao_ia"),
+    Feed("Product Talk (Teresa Torres)",  "https://www.producttalk.org/feed/",           "world", "gestao_ia"),
+    Feed("Software Engineering Daily",    "https://softwareengineeringdaily.com/feed/",  "world", "gestao_ia"),
 
     # ---------------------- Mundo (# TODO confirmar RSS) -----------------------
-    # TODO: The Digital Project Manager — https://thedigitalprojectmanager.com/feed/
-    # TODO: LeadDev                     — https://leaddev.com/rss
     # TODO: PMI                         — https://www.pmi.org/learning/ai-in-project-management
     # TODO: ProjectManagement.com       — https://www.projectmanagement.com/
     # TODO: Toptal (PM blog)            — https://www.toptal.com/project-managers/blog
+    # TODO: First Round Review          — endpoint atual não retorna RSS (404)
+    # TODO: Reforge blog                — sem RSS público confirmado
+    # TODO: Atlassian blog              — endpoint atual retorna 404, procurar seção específica
 
     # ---------------------- Brasil (# TODO confirmar RSS) ----------------------
     # TODO: PMI Brasil — https://pmi.org.br  (avaliar também capítulos regionais)
