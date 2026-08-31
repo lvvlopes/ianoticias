@@ -643,3 +643,117 @@ def build_card_tiktok_jpeg(
     buf = BytesIO()
     img.convert("RGB").save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
     return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Pack de cenas do TikTok — 4 JPGs (hook, fato, impacto, fonte) + roteiro.
+# Cada JPG segue o mesmo estilo do card do IG (mesma arte de fundo TikTok
+# vertical), variando o CONTEÚDO textual. Use em CapCut/InShot: arrasta os
+# 4 slides na ordem, cola a legenda do roteiro, escolhe trilha do TikTok.
+# ---------------------------------------------------------------------------
+def _tt_base_canvas(category: str) -> tuple[Image.Image, ImageDraw.ImageDraw]:
+    """Fundo TikTok vertical com scrim escuro pra qualquer texto ser legível."""
+    base = _load_tiktok_bg(category).convert("RGBA")
+    w, h = TIKTOK_SIZE
+    scrim = Image.new("RGBA", TIKTOK_SIZE, (6, 10, 12, 155))
+    base = Image.alpha_composite(base, scrim)
+    img = base.convert("RGB")
+    return img, ImageDraw.Draw(img, "RGBA")
+
+
+def _tt_draw_kicker(draw, x: int, y: int, text: str, size: int = 30) -> int:
+    """Kicker mono + traço de acento acima do bloco de texto. Retorna Y do próximo bloco."""
+    font = _load_font(DISPLAY_MED_CHAIN, size)
+    track = 4
+    _draw_tracked(draw, (x, y), text.upper(), font, TEAL, track)
+    tb = draw.textbbox((0, 0), "M", font=font)
+    accent_y = y + (tb[3] - tb[1]) + 18
+    draw.rounded_rectangle(
+        (x, accent_y, x + 100, accent_y + 6), radius=3, fill=TEAL
+    )
+    return accent_y + 42
+
+
+def _tt_draw_body(draw, x: int, y: int, text: str, max_w: int, max_h: int) -> None:
+    """Bloco de texto grande, com sombra, encolhendo pra caber. Alinha à esquerda."""
+    lines, font, line_h = _fit_title_block(draw, text, max_w, max_h)
+    for ln in lines:
+        draw.text((x + 3, y + 4), ln, font=font, fill=(0, 0, 0, 155))
+        draw.text((x, y), ln, font=font, fill=TITLE_WHITE)
+        y += line_h
+
+
+def _tt_footer(draw, source_name: str, source_url: str) -> None:
+    """Fonte no rodapé do slide, mesmo estilo do card principal do TikTok."""
+    W, H = TIKTOK_SIZE
+    margin = 72
+    src = (source_name or "").strip() or (_short_source(source_url) if source_url else "")
+    if not src:
+        return
+    foot_font = _load_font(DISPLAY_MED_CHAIN, 28)
+    foot_y = H - 120
+    draw.rounded_rectangle(
+        (margin, foot_y + 16, margin + 48, foot_y + 22), radius=3, fill=TEAL
+    )
+    _draw_tracked(
+        draw, (margin + 72, foot_y), f"FONTE · {src.upper()}",
+        foot_font, SOURCE_GRAY, 3,
+    )
+
+
+def _tt_save_jpeg(img: Image.Image) -> bytes:
+    buf = BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
+    return buf.getvalue()
+
+
+def build_tt_hook(*, title: str, category: str, source_url: str = "", source_name: str = "") -> bytes:
+    """Slide 1 (0-3s): NOTÍCIA IA + título grande. Sem corpo. É o hook."""
+    img, draw = _tt_base_canvas(category)
+    W, H = TIKTOK_SIZE
+    margin = 72
+    label = CATEGORY_POST_LABEL.get(
+        category, CATEGORY_LABELS.get(category, category).upper()
+    )
+    y = _tt_draw_kicker(draw, margin, int(H * 0.42), label, size=36)
+    _tt_draw_body(draw, margin, y, title, W - 2 * margin, int(H * 0.35))
+    _tt_footer(draw, source_name, source_url)
+    return _tt_save_jpeg(img)
+
+
+def build_tt_fato(*, body: str, category: str, source_url: str = "", source_name: str = "") -> bytes:
+    """Slide 2 (3-15s): O QUE ACONTECEU + 1º parágrafo (fato)."""
+    img, draw = _tt_base_canvas(category)
+    W, H = TIKTOK_SIZE
+    margin = 72
+    y = _tt_draw_kicker(draw, margin, int(H * 0.14), "O QUE ACONTECEU", size=32)
+    _tt_draw_body(draw, margin, y, body, W - 2 * margin, int(H * 0.62))
+    _tt_footer(draw, source_name, source_url)
+    return _tt_save_jpeg(img)
+
+
+def build_tt_impacto(*, body: str, category: str, source_url: str = "", source_name: str = "") -> bytes:
+    """Slide 3 (15-25s): POR QUE IMPORTA + 2º parágrafo (implicações)."""
+    img, draw = _tt_base_canvas(category)
+    W, H = TIKTOK_SIZE
+    margin = 72
+    y = _tt_draw_kicker(draw, margin, int(H * 0.14), "POR QUE IMPORTA", size=32)
+    _tt_draw_body(draw, margin, y, body, W - 2 * margin, int(H * 0.62))
+    _tt_footer(draw, source_name, source_url)
+    return _tt_save_jpeg(img)
+
+
+def build_tt_fonte(*, handle: str, category: str, source_url: str = "", source_name: str = "") -> bytes:
+    """Slide 4 (25-30s): CTA "Siga @handle" + fonte no rodapé."""
+    img, draw = _tt_base_canvas(category)
+    W, H = TIKTOK_SIZE
+    margin = 72
+    y = _tt_draw_kicker(draw, margin, int(H * 0.30), "SIGA PARA MAIS", size=34)
+    handle_text = f"@{handle.lstrip('@')}" if handle else "@ianoticiaslv"
+    _tt_draw_body(draw, margin, y, handle_text, W - 2 * margin, int(H * 0.30))
+    sub_font = _load_font(DISPLAY_MED_CHAIN, 40)
+    sub = "IA todo dia · Salve · Compartilhe"
+    draw.text((margin + 2, int(H * 0.72) + 3), sub, font=sub_font, fill=(0, 0, 0, 150))
+    draw.text((margin, int(H * 0.72)), sub, font=sub_font, fill=TITLE_WHITE)
+    _tt_footer(draw, source_name, source_url)
+    return _tt_save_jpeg(img)
