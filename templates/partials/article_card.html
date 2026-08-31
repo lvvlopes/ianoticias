@@ -51,12 +51,16 @@
         {% if article.ig_status.value == 'posted' %}disabled{% endif %}
       >
         {% if article.ig_status.value == 'posted' %}
-          ✓ Postado no IG
+          ✓ Postado IG
         {% else %}
           <span class="btn-idle">Postar IG</span>
           <span class="btn-busy">Publicando<span class="dots"><i></i><i></i><i></i></span></span>
         {% endif %}
       </button>
+      <a class="btn-ghost" href="/api/tiktok/card/{{ article.id }}"
+         download title="Baixar card 9:16 para TikTok (Photo Mode)">
+        Baixar TikTok
+      </a>
     {% else %}
       <span class="btn-ghost" style="pointer-events:none">
         {% if article.ig_status.value == 'posted' %}✓ Postado no IG{% else %}Rascunho{% endif %}

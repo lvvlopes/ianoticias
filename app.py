@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from ianoticias.config.settings import settings
-from ianoticias.routers import admin, home, ingest, instagram
+from ianoticias.routers import admin, home, ingest, instagram, tiktok
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -36,6 +36,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(home.router)
 app.include_router(ingest.router)
 app.include_router(instagram.router)
+app.include_router(tiktok.router)
 app.include_router(admin.router)
 
 

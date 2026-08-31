@@ -36,6 +36,9 @@ FONT_DIR = _STATIC_DIR / "fonts"
 DEFAULT_BG = _STATIC_DIR / "hero" / "default.jpg"
 # Imagem-base fixa do card do Instagram (arte de marca; sem texto sobreposto).
 INSTAGRAM_BG = _STATIC_DIR / "hero" / "intagram.jpg"
+# Card do TikTok — 9:16, arte vertical. Fallback: usa INSTAGRAM_BG recortada.
+TIKTOK_BG = _STATIC_DIR / "hero" / "tiktok.jpg"
+TIKTOK_SIZE = (1080, 1920)
 
 _UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -530,6 +533,111 @@ def build_card_jpeg(
         draw.rounded_rectangle((margin, foot_y + 14, margin + 40, foot_y + 18), radius=2, fill=TEAL)
         _draw_tracked(
             draw, (margin + 60, foot_y), f"FONTE · {src.upper()}", foot_font, SOURCE_GRAY, 2
+        )
+
+    buf = BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Card do TikTok (9:16, 1080x1920) — mesmo layout do IG, adaptado para vertical.
+# ---------------------------------------------------------------------------
+def _load_tiktok_bg(category: str) -> Image.Image:
+    """Fundo do card do TikTok: tiktok.jpg → intagram.jpg (cropado 9:16)
+    → default.jpg → fundo sólido."""
+    import logging
+    log = logging.getLogger(__name__)
+    for path in (TIKTOK_BG, INSTAGRAM_BG, DEFAULT_BG):
+        try:
+            if path.exists():
+                return _cover(Image.open(path).convert("RGB"), TIKTOK_SIZE)
+            log.warning("image_card(tiktok): fundo ausente em %s", path)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("image_card(tiktok): falha ao abrir %s: %s", path, exc)
+    log.warning("image_card(tiktok): usando fundo sólido de fallback (%s)", category)
+    return Image.new("RGB", TIKTOK_SIZE, _hex_rgb(CATEGORY_COLORS.get(category, "#111017")))
+
+
+def _text_scrim_tiktok(size: tuple[int, int]) -> Image.Image:
+    """Escurecida na METADE INFERIOR (onde vai o texto), desvanecendo pra cima."""
+    w, h = size
+    col = Image.new("L", (1, h))
+    px = col.load()
+    for y in range(h):
+        # 0 no topo, cresce a partir de ~35%, atinge cheio em ~55%
+        t = max(0.0, (y - h * 0.35) / (h * 0.20))
+        px[0, y] = int(min(1.0, t) * 220)
+    scrim = Image.new("RGBA", size, (6, 10, 12, 255))
+    scrim.putalpha(col.resize(size))
+    return scrim
+
+
+def build_card_tiktok_jpeg(
+    *,
+    title: str = "",
+    category: str,
+    source_url: str = "",
+    source_name: str = "",
+) -> bytes:
+    """Card 1080x1920 (9:16) para TikTok Photo Mode / capa. Mesmo estilo do IG:
+    pílula da categoria, título grande na metade inferior, fonte no rodapé.
+    """
+    base = _load_tiktok_bg(category).convert("RGBA")
+    base = Image.alpha_composite(base, _text_scrim_tiktok(TIKTOK_SIZE))
+    img = base.convert("RGB")
+    draw = ImageDraw.Draw(img, "RGBA")
+
+    W, H = TIKTOK_SIZE
+    margin = 72
+    title_max_w = W - 2 * margin
+
+    # --- Pílula da categoria (contorno) — meio da imagem, acima do bloco de texto
+    pill_font = _load_font(DISPLAY_MED_CHAIN, 34)
+    label = CATEGORY_POST_LABEL.get(
+        category, CATEGORY_LABELS.get(category, category).upper()
+    )
+    track = 4
+    tw = _tracked_width(draw, label, pill_font, track)
+    tb = draw.textbbox((0, 0), "M", font=pill_font)
+    th = tb[3] - tb[1]
+    ppx, ppy = 36, 20
+    pill_y = int(H * 0.58)
+    px1, py1 = margin, pill_y
+    px2, py2 = px1 + tw + 2 * ppx, py1 + th + 2 * ppy
+    radius = (py2 - py1) // 2
+    draw.rounded_rectangle((px1, py1, px2, py2), radius=radius, outline=TEAL, width=3)
+    _draw_tracked(draw, (px1 + ppx, py1 + ppy - tb[1]), label, pill_font, TEAL, track)
+
+    # --- Traço de acento
+    accent_y = py2 + 42
+    draw.rounded_rectangle(
+        (margin, accent_y, margin + 120, accent_y + 8), radius=4, fill=TEAL
+    )
+
+    # --- Título grande, ocupa a metade inferior
+    title_top = accent_y + 46
+    title_bottom = H - 180  # respiro pro rodapé
+    lines, title_font, line_h = _fit_title_block(
+        draw, title, title_max_w, title_bottom - title_top
+    )
+    y = title_top
+    for ln in lines:
+        draw.text((margin + 3, y + 4), ln, font=title_font, fill=(0, 0, 0, 150))
+        draw.text((margin, y), ln, font=title_font, fill=TITLE_WHITE)
+        y += line_h
+
+    # --- Fonte no rodapé
+    src = (source_name or "").strip() or (_short_source(source_url) if source_url else "")
+    if src:
+        foot_font = _load_font(DISPLAY_MED_CHAIN, 30)
+        foot_y = H - 130
+        draw.rounded_rectangle(
+            (margin, foot_y + 18, margin + 52, foot_y + 24), radius=3, fill=TEAL
+        )
+        _draw_tracked(
+            draw, (margin + 76, foot_y), f"FONTE · {src.upper()}",
+            foot_font, SOURCE_GRAY, 3,
         )
 
     buf = BytesIO()
