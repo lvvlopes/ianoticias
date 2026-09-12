@@ -93,10 +93,13 @@ async def list_for_home(
     session,
     category: Category | None = None,
     day_limit: int = 14,
+    limit: int | None = None,
 ) -> list[Article]:
     """Lista artigos ordenados por dia (desc), featured primeiro, mais recente.
 
     O agrupamento por dia é feito na camada de apresentação (router/template).
+    `limit` evita trazer o acervo inteiro quando só o topo interessa (hero,
+    manchetes do ticker).
     """
     stmt = select(Article)
     if category is not None:
@@ -107,6 +110,8 @@ async def list_for_home(
         Article.published_at.desc(),
         Article.created_at.desc(),
     )
+    if limit is not None:
+        stmt = stmt.limit(limit)
     rows = await session.execute(stmt)
     return list(rows.scalars().all())
 
@@ -141,22 +146,16 @@ def _haystack():
 ORDERS = ("recentes", "antigas", "fonte")
 
 
-async def search_for_home(
-    session,
+def _apply_filters(
+    stmt,
     *,
-    q: str | None = None,
-    source: str | None = None,
-    day_from: date | None = None,
-    day_to: date | None = None,
-    order: str = "recentes",
-) -> list[Article]:
-    """Artigos que batem com a busca — sem filtro de categoria.
-
-    A categoria fica de fora de propósito: o router usa esta lista para contar
-    quantos resultados cada editoria tem e só então aplica o filtro escolhido.
-    """
-    stmt = select(Article)
-
+    q: str | None,
+    source: str | None,
+    day_from: date | None,
+    day_to: date | None,
+    category: Category | None = None,
+):
+    """Aplica os mesmos WHERE em toda consulta da busca (lista e contagens)."""
     include, exclude = parse_query(q)
     if include or exclude:
         hay = _haystack()
@@ -171,23 +170,92 @@ async def search_for_home(
         stmt = stmt.where(Article.day >= day_from)
     if day_to is not None:
         stmt = stmt.where(Article.day <= day_to)
+    if category is not None:
+        stmt = stmt.where(Article.category == category)
+    return stmt
 
+
+def _order_by(stmt, order: str):
     if order == "antigas":
-        stmt = stmt.order_by(
+        return stmt.order_by(
             Article.day.asc(), Article.published_at.asc(), Article.created_at.asc()
         )
-    elif order == "fonte":
-        stmt = stmt.order_by(
+    if order == "fonte":
+        return stmt.order_by(
             Article.source_name.asc(), Article.day.desc(), Article.published_at.desc()
         )
-    else:  # "recentes" (padrão) — mesma ordenação da home sem busca
-        stmt = stmt.order_by(
-            Article.day.desc(),
-            Article.featured.desc(),
-            Article.published_at.desc(),
-            Article.created_at.desc(),
-        )
+    # "recentes" (padrão) — mesma ordenação da home sem busca
+    return stmt.order_by(
+        Article.day.desc(),
+        Article.featured.desc(),
+        Article.published_at.desc(),
+        Article.created_at.desc(),
+    )
 
+
+async def count_by_category(
+    session,
+    *,
+    q: str | None = None,
+    source: str | None = None,
+    day_from: date | None = None,
+    day_to: date | None = None,
+) -> dict[str, int]:
+    """Quantos artigos cada editoria tem dentro da busca — sem trazer as linhas.
+
+    A categoria fica fora dos filtros de propósito: é isso que alimenta o
+    contador de cada chip, inclusive os que não estão selecionados.
+    """
+    stmt = _apply_filters(
+        select(Article.category, func.count()).select_from(Article),
+        q=q, source=source, day_from=day_from, day_to=day_to,
+    ).group_by(Article.category)
+
+    totals = {c.value: 0 for c in Category}
+    for category, total in (await session.execute(stmt)).all():
+        totals[category.value if isinstance(category, Category) else category] = total
+    return totals
+
+
+async def count_by_day(
+    session,
+    *,
+    q: str | None = None,
+    source: str | None = None,
+    day_from: date | None = None,
+    day_to: date | None = None,
+    category: Category | None = None,
+) -> dict[date, int]:
+    """Total real de cada dia dentro da busca.
+
+    Sem isso o cabeçalho do dia contaria só o que veio na página atual e diria
+    "30 matérias" para um dia que tem 90.
+    """
+    stmt = _apply_filters(
+        select(Article.day, func.count()).select_from(Article),
+        q=q, source=source, day_from=day_from, day_to=day_to, category=category,
+    ).group_by(Article.day)
+    return {day: total for day, total in (await session.execute(stmt)).all()}
+
+
+async def search_page(
+    session,
+    *,
+    q: str | None = None,
+    source: str | None = None,
+    day_from: date | None = None,
+    day_to: date | None = None,
+    category: Category | None = None,
+    order: str = "recentes",
+    limit: int = 30,
+    offset: int = 0,
+) -> list[Article]:
+    """Uma página de resultados, já filtrada e ordenada pelo banco."""
+    stmt = _apply_filters(
+        select(Article),
+        q=q, source=source, day_from=day_from, day_to=day_to, category=category,
+    )
+    stmt = _order_by(stmt, order).limit(limit).offset(offset)
     rows = await session.execute(stmt)
     return list(rows.scalars().all())
 

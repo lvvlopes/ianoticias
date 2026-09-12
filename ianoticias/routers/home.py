@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from datetime import date, datetime
 from typing import Iterable
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -86,11 +87,9 @@ def _parse_day(raw: str | None) -> date | None:
         return None
 
 
-def _count_by_category(items: Iterable[Article]) -> dict[str, int]:
-    totals = {cat: 0 for cat in ("ia", "eng_dev_ia", "gestao_ia")}
-    for a in items:
-        totals[a.category.value] += 1
-    return totals
+# Quantas matérias cada página da lista traz. A home tem mais de mil artigos:
+# sem isso, uma visita carrega o acervo inteiro de uma vez.
+PAGE_SIZE = 30
 
 
 async def _search_context(
@@ -103,6 +102,7 @@ async def _search_context(
     de: str | None,
     ate: str | None,
     ordem: str | None,
+    pagina: int = 1,
 ) -> dict:
     """Roda a busca e monta tudo que a lista (e a barra de filtros) precisa."""
     category = _parse_category(categoria)
@@ -111,28 +111,52 @@ async def _search_context(
     day_from = _parse_day(de)
     day_to = _parse_day(ate)
     ordem = ordem if ordem in repo.ORDERS else "recentes"
+    pagina = max(1, pagina)
+    offset = (pagina - 1) * PAGE_SIZE
 
-    # `matched` ignora a categoria de propósito — é o universo da busca, e é
-    # dele que saem os contadores de cada chip de editoria.
-    matched = await repo.search_for_home(
-        session, q=q, source=fonte, day_from=day_from, day_to=day_to, order=ordem
+    filters = dict(q=q, source=fonte, day_from=day_from, day_to=day_to)
+
+    # Os contadores saem de agregações no banco — nada de trazer as linhas só
+    # para contá-las. `totals` ignora a categoria de propósito: é o que cada
+    # chip mostra, inclusive os não selecionados.
+    totals = await repo.count_by_category(session, **filters)
+    per_day = await repo.count_by_day(session, category=category, **filters)
+    items = await repo.search_page(
+        session, category=category, order=ordem,
+        limit=PAGE_SIZE, offset=offset, **filters,
     )
-    filtered = matched if category is None else [a for a in matched if a.category == category]
 
+    total_count = sum(totals.values())
+    result_count = totals[category.value] if category is not None else total_count
+    has_more = offset + len(items) < result_count
+
+    selected = categoria if categoria in ("ia", "eng_dev_ia", "gestao_ia") else "todas"
     include_terms, _ = parse_query(q)
+    grouped = _group_by_day(items)
+
     return {
         "request": request,
-        "grouped": _group_by_day(filtered),
-        "selected_category": categoria if categoria in ("ia", "eng_dev_ia", "gestao_ia") else "todas",
+        "grouped": grouped,
+        "per_day": per_day,
+        "selected_category": selected,
         "q": q,
         "fonte": fonte or "",
         "de": de or "",
         "ate": ate or "",
         "ordem": ordem,
         "hl_terms": include_terms,
-        "totals": _count_by_category(matched),
-        "total_count": len(matched),
-        "result_count": len(filtered),
+        "totals": totals,
+        "total_count": total_count,
+        "result_count": result_count,
+        "pagina": pagina,
+        # Link do "Carregar mais": mesma busca, próxima página. `dia_corte`
+        # diz qual cabeçalho de dia já foi impresso, para não repetir.
+        "next_url": _next_url(
+            q=q, fonte=fonte, de=de, ate=ate, ordem=ordem,
+            categoria=selected, pagina=pagina + 1,
+            dia_corte=items[-1].day if items else None,
+        ) if has_more else None,
+        "remaining": max(0, result_count - offset - len(items)),
         # `has_advanced` = o painel de busca tem algo preenchido (a editoria
         # não conta: ela vive nos chips, fora do painel).
         "has_advanced": bool(q or fonte or day_from or day_to or ordem != "recentes"),
@@ -140,6 +164,18 @@ async def _search_context(
         "is_admin": auth.is_admin(request),
         "day_label": _pt_day_label,
     }
+
+
+def _next_url(**params) -> str:
+    """Monta a URL da próxima página deixando de fora o que é vazio/padrão."""
+    clean = {}
+    for key, value in params.items():
+        if value in (None, "", "todas"):
+            continue
+        if key == "ordem" and value == "recentes":
+            continue
+        clean[key] = value.isoformat() if isinstance(value, date) else str(value)
+    return "/?" + urlencode(clean)
 
 
 @router.get("/")
@@ -151,28 +187,39 @@ async def home(
     de: str | None = None,
     ate: str | None = None,
     ordem: str | None = None,
+    pagina: int = 1,
+    dia_corte: str | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     ctx = await _search_context(
-        request, session, categoria=categoria, q=q, fonte=fonte, de=de, ate=ate, ordem=ordem
+        request, session, categoria=categoria, q=q, fonte=fonte,
+        de=de, ate=ate, ordem=ordem, pagina=pagina,
     )
 
-    # Requisição do HTMX (usuário mexeu na busca): devolve só a lista.
-    # Os contadores dos chips viajam junto, com swap out-of-band.
+    # "Carregar mais": só os blocos de dia + o próximo botão, para anexar no
+    # fim da lista. `dia_corte` evita repetir o cabeçalho de um dia que a
+    # página anterior já abriu.
+    if pagina > 1:
+        return templates.TemplateResponse(
+            "partials/article_page.html",
+            {**ctx, "hide_day_head_for": _parse_day(dia_corte)},
+        )
+
+    # Requisição do HTMX (usuário mexeu nos filtros): devolve só a lista.
+    # Os chips e os contadores viajam junto, com swap out-of-band.
     if request.headers.get("hx-request") == "true":
         return templates.TemplateResponse(
             "partials/article_list.html", {**ctx, "oob_counts": True}
         )
 
-    # Carga completa da página: hero/ticker/rail vêm sempre do acervo inteiro.
-    all_items = await repo.list_for_home(session, category=None)
+    # Carga completa da página: hero/ticker vêm sempre do topo do acervo.
     return templates.TemplateResponse(
         "index.html",
         {
             **ctx,
             "sources": await repo.list_source_names(session),
             "util_date_label": _pt_util_date(datetime.now()),
-            **_build_home_context(all_items),
+            **_build_home_context(await repo.list_for_home(session, limit=10)),
         },
     )
 
@@ -186,11 +233,13 @@ async def articles_fragment(
     de: str | None = None,
     ate: str | None = None,
     ordem: str | None = None,
+    pagina: int = 1,
     session: AsyncSession = Depends(get_session),
 ):
     """Fragmento HTMX: só a lista, sem o layout."""
     ctx = await _search_context(
-        request, session, categoria=categoria, q=q, fonte=fonte, de=de, ate=ate, ordem=ordem
+        request, session, categoria=categoria, q=q, fonte=fonte,
+        de=de, ate=ate, ordem=ordem, pagina=pagina,
     )
     return templates.TemplateResponse(
         "partials/article_list.html", {**ctx, "oob_counts": True}

@@ -44,6 +44,17 @@ busca daquele termo.
 
 Exemplo: `/?q=agentes+-google&categoria=ia&de=2026-09-01&ordem=antigas`
 
+A busca fica atrás do botão **Pesquisar**, logo depois do filtro de editoria;
+o painel já vem aberto quando a URL traz algum filtro.
+
+**Paginação.** A lista traz `PAGE_SIZE` matérias por vez (30, em
+`ianoticias/routers/home.py`) e um botão "Carregar mais" anexa a próxima
+página sem recarregar. O parâmetro `pagina` é 1-based; `dia_corte` acompanha
+o link do botão para não repetir o cabeçalho de um dia que a página anterior
+já abriu. Contadores dos chips e de cada dia saem de agregações no banco
+(`count_by_category` / `count_by_day`), então mostram o total real da busca,
+não o pedaço que está na tela.
+
 ---
 
 ## Guias de configuração

@@ -386,6 +386,13 @@
     .ingest-banner .stat{color:rgba(237,236,230,.75)}
     .ingest-banner b{color:var(--hero-text)}
 
+    /* "Carregar mais" — fecha a lista de cada página */
+    .load-more{display:flex;justify-content:center;margin:8px 0 44px}
+    .load-more button{padding:12px 26px;font-size:12px}
+    .load-more button:disabled{opacity:.65;cursor:progress}
+    .load-more .btn-busy{gap:8px}
+    .load-more .dots i{background:var(--ink-2)}
+
     /* Empty state */
     .empty{border:1.5px dashed var(--line-strong);border-radius:4px;padding:40px;text-align:center;color:var(--ink-3);
       font-family:var(--serif);font-size:17px}

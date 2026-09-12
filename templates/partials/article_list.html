@@ -1,6 +1,7 @@
 {#
-  Renderiza a lista principal (agrupada por dia) ou o estado vazio.
-  Usada tanto no index (bloco inicial) quanto pelo fragmento HTMX da busca.
+  Lista principal: resumo da busca + a primeira página de resultados (ou o
+  estado vazio). Usada no index e como resposta do HTMX quando o leitor mexe
+  nos filtros.
 #}
 {% if has_filters %}
   <p class="result-line" role="status" aria-live="polite">
@@ -13,9 +14,7 @@
 {% endif %}
 
 {% if grouped %}
-  {% for day, items in grouped.items() %}
-    {% include "partials/day_group.html" %}
-  {% endfor %}
+  {% include "partials/article_page.html" %}
 {% else %}
   <div class="empty">
     {% if has_filters %}

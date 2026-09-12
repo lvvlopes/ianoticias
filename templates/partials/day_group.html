@@ -1,14 +1,21 @@
 {#
   Bloco de um dia: cabeçalho editorial + grade de cards em 3 colunas.
   Espera `day` (date), `items` (lista) e `day_label` (função) no contexto.
+
+  `hide_day_head_for` vem do "Carregar mais": o dia que a página anterior já
+  abriu não ganha um segundo cabeçalho. E a contagem sai de `per_day` (total
+  real do dia na busca), não de `items`, que é só o pedaço desta página.
 #}
 <section>
-  <div class="day-head">
-    <span class="d">{{ day_label(day) if day_label else day.strftime('%d/%m') }}</span>
-    <span class="day-mono">{{ day.strftime('%Y-%m-%d') }}</span>
-    <span class="rule"></span>
-    <span class="count">{{ items | length }} matéria{% if items | length != 1 %}s{% endif %}</span>
-  </div>
+  {% if day != hide_day_head_for %}
+    <div class="day-head">
+      <span class="d">{{ day_label(day) if day_label else day.strftime('%d/%m') }}</span>
+      <span class="day-mono">{{ day.strftime('%Y-%m-%d') }}</span>
+      <span class="rule"></span>
+      {% set _n = (per_day or {}).get(day, items | length) %}
+      <span class="count">{{ _n }} matéria{% if _n != 1 %}s{% endif %}</span>
+    </div>
+  {% endif %}
 
   {% for chunk_start in range(0, items | length, 3) %}
     <div class="cards" style="margin-bottom:30px">

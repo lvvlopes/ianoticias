@@ -1,0 +1,24 @@
+{#
+  Uma página de resultados: os blocos de dia + o botão da próxima página.
+  Usada tanto dentro da lista completa quanto sozinha, como resposta do
+  "Carregar mais" (que troca a si mesmo por este bloco).
+#}
+{% for day, items in grouped.items() %}
+  {% include "partials/day_group.html" %}
+{% endfor %}
+
+{% if next_url %}
+  <div id="load-more" class="load-more">
+    <button
+      type="button"
+      class="btn-ghost"
+      hx-get="{{ next_url }}"
+      hx-target="#load-more"
+      hx-swap="outerHTML"
+      hx-sync="#filter-zone:replace"
+      hx-disabled-elt="this">
+      <span class="btn-idle">Carregar mais <span class="mono" style="opacity:.6">· {{ remaining }} restantes</span></span>
+      <span class="btn-busy">Carregando<span class="dots"><i></i><i></i><i></i></span></span>
+    </button>
+  </div>
+{% endif %}
