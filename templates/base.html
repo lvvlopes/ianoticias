@@ -207,8 +207,9 @@
       clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 
     /* ---------------- Busca + filtros ---------------- */
-    .searchbar{margin:34px 0 10px;padding:18px 20px 16px;background:var(--panel);
+    .searchbar{margin:0 0 26px;padding:18px 20px 16px;background:var(--panel);
       border:1.5px solid var(--ink);border-radius:4px}
+    .searchbar[hidden]{display:none}
     .sb-row{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
     .sb-field{display:flex;flex-direction:column;gap:6px;min-width:150px}
     .sb-grow{flex:1 1 320px;min-width:min(100%,280px)}
@@ -236,9 +237,7 @@
       opacity:0;transition:opacity .15s}
     .sb-spin.htmx-request{opacity:1;animation:sb-rot .7s linear infinite}
     @keyframes sb-rot{to{transform:rotate(360deg)}}
-    .sb-row-2{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
-      margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-    .sb-clear{flex:none;margin-left:auto;text-decoration:none}
+    .sb-clear{flex:none;align-self:flex-end;margin-bottom:1px;text-decoration:none}
 
     /* Linha de resumo dos resultados */
     .result-line{margin:0 0 6px;font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;
@@ -254,19 +253,37 @@
     .tag-link{color:var(--ink-3);transition:color .15s}
     .tag-link:hover,.tag-link:focus-visible{color:var(--gold-deep);text-decoration:underline}
 
-    /* Filtros por categoria (radios com aparência de chip) */
-    .filters{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;border:none;min-width:0}
-    .filters label{
+    /* Filtros por categoria — os botões de sempre */
+    .filter-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;margin:34px 0 26px}
+    .filters{display:flex;flex-wrap:wrap;gap:8px;margin:0;min-width:0}
+    .filters button{
       display:inline-flex;align-items:center;gap:8px;
       font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
       background:transparent;border:1.5px solid var(--line-strong);
       padding:8px 14px;border-radius:2px;color:var(--ink-2);cursor:pointer;transition:all .15s;
     }
-    .filters label:hover{color:var(--ink);border-color:var(--ink)}
-    .filters input:checked + label{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-    .filters input:focus-visible + label{outline:2.5px solid var(--gold);outline-offset:2px}
-    .filters label .dot{width:8px;height:8px;border-radius:50%}
-    .filters label .ct{opacity:.6;font-weight:400}
+    .filters button:hover{color:var(--ink);border-color:var(--ink)}
+    .filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+    .filters button .dot{width:8px;height:8px;border-radius:50%}
+
+    /* Botão que abre a busca detalhada — vem depois dos chips de editoria */
+    .search-toggle{
+      display:inline-flex;align-items:center;gap:8px;margin-left:auto;
+      font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+      background:transparent;border:1.5px dashed var(--line-strong);
+      padding:8px 14px;border-radius:2px;color:var(--ink-2);cursor:pointer;transition:all .15s;
+    }
+    .search-toggle:hover{color:var(--ink);border-color:var(--ink)}
+    .search-toggle[aria-expanded="true"]{background:var(--ink);color:var(--paper);
+      border-style:solid;border-color:var(--ink)}
+    .search-toggle .st-icon{font-size:15px;line-height:1}
+    /* Pontinho dourado: há busca ativa mesmo com o painel fechado */
+    .search-toggle .st-dot{width:7px;height:7px;border-radius:50%;background:var(--gold)}
+    /* No celular os chips já ocupam a linha toda: o botão vira largura cheia
+       em vez de ficar sozinho e encolhido na direita. */
+    @media(max-width:720px){
+      .search-toggle{margin-left:0;width:100%;justify-content:center}
+    }
 
     /* Sections */
     .section{padding:46px 0 8px;border-top:1px solid var(--line-strong)}
@@ -500,12 +517,28 @@
     btn.textContent = open ? 'Ver menos' : 'Veja mais';
   });
 
+  // Abre/fecha o painel de busca detalhada. Fechar não descarta os filtros:
+  // eles continuam valendo (o pontinho no botão avisa que há busca ativa).
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#search-toggle');
+    if (!btn) return;
+    const panel = document.getElementById('advanced');
+    if (!panel) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      const q = document.getElementById('q');
+      if (q) q.focus();
+    }
+  });
+
   // Mantém a URL da busca limpa: tira os campos vazios e os valores padrão
   // antes do HTMX montar a query string (e, com hx-push-url, a URL da barra).
   // Só mexe nas requisições do formulário de busca.
   document.body.addEventListener('htmx:configRequest', function (evt) {
     const elt = evt.detail.elt;
-    if (!elt || elt.id !== 'filters') return;
+    if (!elt || !elt.closest || !elt.closest('#filter-zone')) return;
     const p = evt.detail.parameters;
     for (const key of Object.keys(p)) {
       if (p[key] === '' || p[key] == null) delete p[key];
@@ -518,12 +551,21 @@
   // resultado troca fora da tela e parece que nada aconteceu.
   document.body.addEventListener('htmx:afterSwap', function (evt) {
     if (evt.detail.target && evt.detail.target.id === 'article-list') {
-      // "Limpar filtros" só faz sentido quando há filtro — e a presença da
-      // linha de resumo na lista é exatamente esse sinal.
+      // "Limpar" e o pontinho do botão só fazem sentido com busca ativa —
+      // e busca ativa é exatamente "algum campo do painel preenchido".
+      const form = document.getElementById('advanced');
+      const val = function (n) {
+        const el = form && form.elements[n];
+        return el ? el.value : '';
+      };
+      const active = !!(val('q') || val('fonte') || val('de') || val('ate')
+                        || (val('ordem') && val('ordem') !== 'recentes'));
       const clear = document.getElementById('sb-clear');
-      if (clear) clear.hidden = !document.querySelector('#article-list .result-line');
+      if (clear) clear.hidden = !active;
+      const dot = document.getElementById('search-toggle-dot');
+      if (dot) dot.hidden = !active;
 
-      const bar = document.getElementById('filters');
+      const bar = document.getElementById('filter-zone');
       if (bar) {
         const top = bar.getBoundingClientRect().top;
         if (top < 0 || top > window.innerHeight) {

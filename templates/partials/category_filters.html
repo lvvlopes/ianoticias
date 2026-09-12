@@ -1,0 +1,41 @@
+{#
+  Filtro por editoria — os mesmos botões de sempre.
+  O servidor devolve este bloco inteiro em cada busca (hx-swap-oob), então
+  `aria-pressed` e os contadores nunca ficam desencontrados do que a lista
+  está mostrando.
+
+  #cat-state guarda a editoria escolhida: é o que o painel de busca inclui
+  (hx-include) para não perder o filtro de categoria ao pesquisar.
+#}
+<nav class="filters" id="cat-nav" aria-label="Filtrar por categoria"
+     {% if oob_counts %}hx-swap-oob="true"{% endif %}>
+  <input type="hidden" id="cat-state" name="categoria" value="{{ selected_category }}">
+
+  <button
+    type="button"
+    hx-get="/"
+    hx-vals='{"categoria": "todas"}'
+    hx-include="#advanced"
+    hx-target="#article-list"
+    hx-swap="innerHTML"
+    hx-push-url="true"
+    aria-pressed="{{ 'true' if selected_category == 'todas' else 'false' }}">
+    Todas <span class="mono" style="opacity:.6">· {{ total_count }}</span>
+  </button>
+
+  {% for cat in CATEGORIES_ORDERED %}
+    <button
+      type="button"
+      hx-get="/"
+      hx-vals='{"categoria": "{{ cat }}"}'
+      hx-include="#advanced"
+      hx-target="#article-list"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      aria-pressed="{{ 'true' if selected_category == cat else 'false' }}">
+      <span class="dot" style="background:{{ CATEGORY_COLORS[cat] }}"></span>
+      {{ CATEGORY_SECTION_TITLES[cat] }}
+      <span class="mono" style="opacity:.6">· {{ totals[cat] }}</span>
+    </button>
+  {% endfor %}
+</nav>

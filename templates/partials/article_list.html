@@ -34,14 +34,13 @@
 {% endif %}
 
 {#
-  Swap out-of-band: os contadores dos chips e do painel lateral vivem fora de
-  #article-list, então viajam de carona na resposta do HTMX para não ficarem
-  desatualizados depois de uma busca.
+  Swap out-of-band: o bloco de editorias e os contadores do painel lateral
+  vivem fora de #article-list, então viajam de carona na resposta do HTMX
+  para não ficarem desencontrados do que a lista está mostrando.
 #}
 {% if oob_counts %}
-  <span id="count-todas" hx-swap-oob="true" class="mono ct">· {{ total_count }}</span>
+  {% include "partials/category_filters.html" %}
   {% for cat in CATEGORIES_ORDERED %}
-    <span id="count-{{ cat }}" hx-swap-oob="true" class="mono ct">· {{ totals[cat] }}</span>
     <span id="rail-count-{{ cat }}" hx-swap-oob="true" class="v">{{ totals[cat] }}</span>
   {% endfor %}
   <span id="rail-count-total" hx-swap-oob="true" class="v">{{ total_count }}</span>

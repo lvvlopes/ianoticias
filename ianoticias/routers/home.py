@@ -133,6 +133,9 @@ async def _search_context(
         "totals": _count_by_category(matched),
         "total_count": len(matched),
         "result_count": len(filtered),
+        # `has_advanced` = o painel de busca tem algo preenchido (a editoria
+        # não conta: ela vive nos chips, fora do painel).
+        "has_advanced": bool(q or fonte or day_from or day_to or ordem != "recentes"),
         "has_filters": bool(q or fonte or day_from or day_to or ordem != "recentes" or category),
         "is_admin": auth.is_admin(request),
         "day_label": _pt_day_label,

@@ -142,103 +142,106 @@
 </div>
 {% endif %}
 
-<!-- Busca + filtros -->
-{#
-  Um formulário único: texto, fonte, período, ordem e editoria viajam juntos.
-  O HTMX troca só a lista (#article-list) e empurra a URL, então qualquer
-  combinação de filtros vira um link compartilhável e recarregável.
-#}
-<form
-  id="filters"
-  class="searchbar"
-  role="search"
-  aria-label="Buscar e filtrar notícias"
-  hx-get="/"
-  hx-target="#article-list"
-  hx-swap="innerHTML"
-  hx-push-url="true"
-  {# `input` (não `keyup`) pega também colar/ditar; 400ms evita uma
-     requisição por tecla. `search` cobre o X do campo type=search. #}
-  hx-trigger="submit,
-               input delay:400ms from:#q,
-               search from:#q,
-               change from:#fonte, change from:#de, change from:#ate,
-               change from:#ordem, change from:#cat-filters"
-  hx-indicator="#search-busy">
+<!-- Filtros -->
+<div id="filter-zone">
 
-  <div class="sb-row">
-    <div class="sb-field sb-grow">
-      <label class="sb-lab" for="q">Buscar por palavra</label>
-      <div class="sb-input">
-        <span class="sb-icon" aria-hidden="true">⌕</span>
-        <input
-          type="search" id="q" name="q" value="{{ q }}"
-          autocomplete="off" spellcheck="false" enterkeyhint="search"
-          placeholder="ex.: agentes openai · &quot;modelo de raciocínio&quot; · -google">
-        <span id="search-busy" class="sb-spin htmx-indicator" aria-hidden="true"></span>
+  {# 1) Editorias: o filtro de sempre, sempre visível. #}
+  <div class="filter-row">
+    {% include "partials/category_filters.html" %}
+
+    {# 2) Só depois dos chips vem o botão que abre a busca detalhada. #}
+    <button
+      type="button"
+      id="search-toggle"
+      class="search-toggle"
+      aria-expanded="{{ 'true' if has_advanced else 'false' }}"
+      aria-controls="advanced">
+      <span class="st-icon" aria-hidden="true">⌕</span>
+      <span class="st-label">Pesquisar</span>
+      <span class="st-dot" id="search-toggle-dot" aria-hidden="true"
+            {% if not has_advanced %}hidden{% endif %}></span>
+    </button>
+  </div>
+
+  {#
+    3) Busca detalhada — fechada por padrão, abre no botão acima.
+       Vem aberta quando a URL já traz algum filtro (link compartilhado).
+       O HTMX troca só a lista e empurra a URL; `hx-include="#cat-state"`
+       carrega junto a editoria escolhida nos chips.
+  #}
+  <form
+    id="advanced"
+    class="searchbar"
+    role="search"
+    aria-label="Busca detalhada"
+    hx-get="/"
+    hx-target="#article-list"
+    hx-swap="innerHTML"
+    hx-push-url="true"
+    hx-include="#cat-state"
+    {# `input` (não `keyup`) pega também colar/ditar; 400ms evita uma
+       requisição por tecla. `search` cobre o X do campo type=search. #}
+    hx-trigger="submit,
+                 input delay:400ms from:#q,
+                 search from:#q,
+                 change from:#fonte, change from:#de,
+                 change from:#ate, change from:#ordem"
+    hx-indicator="#search-busy"
+    {% if not has_advanced %}hidden{% endif %}>
+
+    <div class="sb-row">
+      <div class="sb-field sb-grow">
+        <label class="sb-lab" for="q">Buscar por palavra</label>
+        <div class="sb-input">
+          <span class="sb-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search" id="q" name="q" value="{{ q }}"
+            autocomplete="off" spellcheck="false" enterkeyhint="search"
+            placeholder="ex.: agentes openai · &quot;modelo de raciocínio&quot; · -google">
+          <span id="search-busy" class="sb-spin htmx-indicator" aria-hidden="true"></span>
+        </div>
+        <p class="sb-hint">
+          Vários termos somam (E). Use <code>"aspas"</code> para frase exata e
+          <code>-palavra</code> para excluir. Busca título, resumo, fonte e hashtags.
+        </p>
       </div>
-      <p class="sb-hint">
-        Vários termos somam (E). Use <code>"aspas"</code> para frase exata e
-        <code>-palavra</code> para excluir. Busca título, resumo, fonte e hashtags.
-      </p>
+
+      <div class="sb-field">
+        <label class="sb-lab" for="fonte">Fonte</label>
+        <select id="fonte" name="fonte">
+          <option value="">Todas as fontes</option>
+          {% for s in sources %}
+            <option value="{{ s }}" {% if s == fonte %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="sb-field">
+        <label class="sb-lab" for="de">De</label>
+        <input type="date" id="de" name="de" value="{{ de }}">
+      </div>
+
+      <div class="sb-field">
+        <label class="sb-lab" for="ate">Até</label>
+        <input type="date" id="ate" name="ate" value="{{ ate }}">
+      </div>
+
+      <div class="sb-field">
+        <label class="sb-lab" for="ordem">Ordem</label>
+        <select id="ordem" name="ordem">
+          <option value="recentes" {% if ordem == 'recentes' %}selected{% endif %}>Mais recentes</option>
+          <option value="antigas"  {% if ordem == 'antigas'  %}selected{% endif %}>Mais antigas</option>
+          <option value="fonte"    {% if ordem == 'fonte'    %}selected{% endif %}>Fonte (A–Z)</option>
+        </select>
+      </div>
+
+      {# Sempre no DOM (o painel não é trocado pelo HTMX); o JS do base.html
+         mostra/esconde conforme a busca estiver ativa ou não. #}
+      <a href="/" id="sb-clear" class="btn-ghost sb-clear"
+         {% if not has_advanced %}hidden{% endif %}>✕ Limpar</a>
     </div>
-
-    <div class="sb-field">
-      <label class="sb-lab" for="fonte">Fonte</label>
-      <select id="fonte" name="fonte">
-        <option value="">Todas as fontes</option>
-        {% for s in sources %}
-          <option value="{{ s }}" {% if s == fonte %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="sb-field">
-      <label class="sb-lab" for="de">De</label>
-      <input type="date" id="de" name="de" value="{{ de }}">
-    </div>
-
-    <div class="sb-field">
-      <label class="sb-lab" for="ate">Até</label>
-      <input type="date" id="ate" name="ate" value="{{ ate }}">
-    </div>
-
-    <div class="sb-field">
-      <label class="sb-lab" for="ordem">Ordem</label>
-      <select id="ordem" name="ordem">
-        <option value="recentes" {% if ordem == 'recentes' %}selected{% endif %}>Mais recentes</option>
-        <option value="antigas"  {% if ordem == 'antigas'  %}selected{% endif %}>Mais antigas</option>
-        <option value="fonte"    {% if ordem == 'fonte'    %}selected{% endif %}>Fonte (A–Z)</option>
-      </select>
-    </div>
-  </div>
-
-  {# Editorias como radios: acessíveis por teclado e disparam o mesmo `change`. #}
-  <div class="sb-row-2">
-    <fieldset class="filters" id="cat-filters">
-      <legend class="sr-only">Filtrar por editoria</legend>
-      <input class="sr-only" type="radio" name="categoria" id="cat-todas" value="todas"
-             {% if selected_category == 'todas' %}checked{% endif %}>
-      <label for="cat-todas">
-        Todas <span class="mono ct" id="count-todas">· {{ total_count }}</span>
-      </label>
-      {% for cat in CATEGORIES_ORDERED %}
-        <input class="sr-only" type="radio" name="categoria" id="cat-{{ cat }}" value="{{ cat }}"
-               {% if selected_category == cat %}checked{% endif %}>
-        <label for="cat-{{ cat }}">
-          <span class="dot" style="background:{{ CATEGORY_COLORS[cat] }}"></span>
-          {{ CATEGORY_SECTION_TITLES[cat] }}
-          <span class="mono ct" id="count-{{ cat }}">· {{ totals[cat] }}</span>
-        </label>
-      {% endfor %}
-    </fieldset>
-
-    {# Sempre no DOM (a barra não é trocada pelo HTMX); o JS do base.html
-       mostra/esconde conforme a lista voltar filtrada ou não. #}
-    <a href="/" id="sb-clear" class="btn-ghost sb-clear"
-       {% if not has_filters %}hidden{% endif %}>✕ Limpar filtros</a>
-  </div>
-</form>
+  </form>
+</div>
 
 <div id="article-list">
   {% include "partials/article_list.html" %}
