@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% block title %}Sobre — IANoticias{% endblock %}
+
+{% block head_extra %}
+<style>
+  .about-head{padding:54px 0 30px;border-bottom:1.5px solid var(--ink)}
+  .about-head h1{font-family:var(--display);font-weight:700;font-size:44px;
+                 letter-spacing:-.03em;line-height:1.05;margin:10px 0 14px}
+  .about-head p{font-family:var(--serif);font-size:20px;line-height:1.5;
+                color:var(--ink-2);max-width:62ch;margin:0}
+
+  .about-nav{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
+  .about-nav a{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;
+               text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line-strong);
+               border-radius:2px;padding:7px 12px;transition:.15s}
+  .about-nav a:hover{color:var(--ink);border-color:var(--ink)}
+
+  .about-sec{padding:48px 0 8px;border-top:1px solid var(--line-strong);scroll-margin-top:110px}
+  .about-sec:first-of-type{border-top:none}
+  .about-sec h2{font-family:var(--display);font-weight:700;font-size:28px;
+                letter-spacing:-.02em;margin:8px 0 18px}
+  .about-sec h3{font-family:var(--display);font-weight:600;font-size:19px;
+                letter-spacing:-.01em;margin:26px 0 8px}
+  .about-sec p{font-family:var(--serif);font-size:17.5px;line-height:1.6;
+               color:var(--ink-2);max-width:72ch;margin:0 0 16px}
+  .about-sec p b,.about-sec li b{color:var(--ink);font-weight:600}
+  .about-sec a{color:var(--gold-deep);border-bottom:1px solid rgba(181,129,15,.45)}
+  .about-sec a:hover{border-bottom-color:var(--gold-deep)}
+  .about-sec code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+                  padding:1px 5px;border-radius:2px}
+
+  .steps{list-style:none;margin:0 0 18px;padding:0;counter-reset:step}
+  .steps li{position:relative;padding:14px 0 14px 52px;border-top:1px solid var(--line);
+            font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--ink-2);max-width:72ch}
+  .steps li::before{counter-increment:step;content:counter(step,decimal-leading-zero);
+                    position:absolute;left:0;top:15px;font-family:var(--mono);font-size:12px;
+                    font-weight:600;letter-spacing:.06em;color:var(--gold-deep)}
+
+  .rules{list-style:none;margin:0 0 18px;padding:0}
+  .rules li{position:relative;padding:11px 0 11px 26px;border-top:1px solid var(--line);
+            font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--ink-2);max-width:72ch}
+  .rules li::before{content:"\25C6";position:absolute;left:0;top:15px;font-size:8px;color:var(--gold)}
+
+  .about-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:4px 0 24px}
+  .about-cards .panel{display:flex;flex-direction:column}
+  .about-cards .panel h4{margin-top:4px}
+  .about-cards .panel p{font-family:var(--serif);font-size:15.5px;line-height:1.45;
+                        color:var(--ink-2);margin:0 0 16px;flex:1}
+  .mail-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;
+            background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);
+            border-radius:2px;padding:9px 14px;font-family:var(--mono);font-size:11px;
+            font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+  .about-sec .mail-btn{border-bottom:1.5px solid var(--ink)}
+  .about-sec .mail-btn:hover{background:var(--gold-deep);border-color:var(--gold-deep);
+                             color:var(--paper)}
+
+  .mail-line{font-family:var(--mono);font-size:14px;letter-spacing:.02em;color:var(--ink);
+             background:var(--panel);border:1.5px solid var(--ink);border-radius:3px;
+             padding:14px 18px;margin:0 0 24px;display:inline-block}
+
+  .note{font-family:var(--mono);font-size:11.5px;line-height:1.7;letter-spacing:.03em;
+        color:var(--ink-3);border-left:2px solid var(--gold);padding:4px 0 4px 14px;
+        margin:26px 0 8px;max-width:72ch}
+
+  .about-back{margin:44px 0 60px;font-family:var(--mono);font-size:11.5px;
+              letter-spacing:.06em;text-transform:uppercase}
+
+  @media(max-width:900px){
+    .about-head h1{font-size:34px}
+    .about-head p{font-size:18px}
+    .about-cards{grid-template-columns:1fr}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="about-head">
+  <span class="eyebrow">Sobre o projeto</span>
+  <h1>Inteligência artificial, decodificada</h1>
+  <p>
+    O IANoticias é um portal de curadoria automática: ele lê os feeds de veículos
+    reputados do Brasil e do mundo, separa o que é notícia de IA que interessa a
+    quem faz software e devolve um resumo curto, em português, com a fonte sempre
+    creditada e linkada ao original.
+  </p>
+  <nav class="about-nav">
+    <a href="#curadoria">Como funciona a curadoria</a>
+    <a href="#editorial">Boas práticas editoriais</a>
+    <a href="#contato">Contato</a>
+  </nav>
+</section>
+
+<!-- ---------------------------------------------------------------- -->
+<section class="about-sec" id="curadoria">
+  <span class="eyebrow">Método</span>
+  <h2>Como funciona a curadoria</h2>
+
+  <p>
+    Não há robô publicando sozinho de madrugada: cada rodada de busca é disparada
+    por um editor. O que muda é o caminho depois disso — ele é o mesmo para toda
+    notícia, sem atalho. O que está publicado aqui passou por todas as etapas
+    abaixo.
+  </p>
+
+  <ol class="steps">
+    <li>
+      <b>Leitura dos feeds.</b> Dezenas de fontes RSS/Atom escolhidas à mão —
+      veículos brasileiros e internacionais, blogs de engenharia e publicações dos
+      próprios laboratórios de IA — distribuídas entre as três editorias do portal.
+    </li>
+    <li>
+      <b>Janela de 24 horas.</b> Só entra o que foi publicado no último dia. O
+      portal é um retrato do agora, não um arquivo histórico.
+    </li>
+    <li>
+      <b>Deduplicação.</b> O endereço é canonizado (sem parâmetros de rastreamento)
+      e comparado com o acervo. A mesma matéria não aparece duas vezes, nem quando
+      chega por dois feeds diferentes.
+    </li>
+    <li>
+      <b>Verificação do link.</b> O endereço original precisa responder de verdade.
+      Link quebrado é descartado antes de qualquer outra coisa — nada é publicado
+      apontando para o vazio.
+    </li>
+    <li>
+      <b>Pré-filtro de tema.</b> Uma triagem por palavra-chave tira o ruído dos
+      feeds generalistas, para que siga adiante só o que tem chance real de ser
+      sobre IA.
+    </li>
+    <li>
+      <b>Leitura e classificação.</b> O texto da matéria é lido e enviado a um
+      modelo de linguagem, que decide se aquilo é relevante para o público do
+      portal, escolhe a editoria e escreve o resumo. O que não é relevante é
+      descartado em silêncio.
+    </li>
+    <li>
+      <b>Publicação agrupada por dia.</b> As notícias aprovadas entram na home
+      organizadas por data, com uma em destaque a cada dia e as demais em ordem
+      editorial.
+    </li>
+  </ol>
+
+  <h3>As três editorias</h3>
+  <p>
+    O recorte é proposital e estreito. O portal não tenta cobrir toda a
+    inteligência artificial — cobre a IA que muda o trabalho de quem constrói e de
+    quem gerencia software.
+  </p>
+  <ul class="rules">
+    <li>
+      <b>{{ CATEGORY_SECTION_TITLES['ia'] }}</b> — o guarda-chuva: modelos,
+      pesquisa, produtos, empresas, regulação e os efeitos disso tudo.
+    </li>
+    <li>
+      <b>{{ CATEGORY_SECTION_TITLES['eng_dev_ia'] }}</b> — código, frameworks,
+      SDKs, arquitetura e ferramentas de desenvolvimento.
+    </li>
+    <li>
+      <b>{{ CATEGORY_SECTION_TITLES['gestao_ia'] }}</b> — PMO, práticas ágeis,
+      entrega, liderança de engenharia e gestão de produto.
+    </li>
+  </ul>
+
+  <h3>Busca e arquivo</h3>
+  <p>
+    Tudo o que já foi publicado continua acessível pela busca da home: texto livre,
+    filtro por editoria, por fonte e por período. Qualquer combinação de filtros
+    vira um endereço que pode ser salvo e compartilhado.
+  </p>
+
+  <p class="note">
+    Cada card mostra a fonte, a data e um link direto para a matéria original. Se a
+    notícia interessou, a leitura completa é lá — é para isso que o link existe.
+  </p>
+</section>
+
+<!-- ---------------------------------------------------------------- -->
+<section class="about-sec" id="editorial">
+  <span class="eyebrow">Compromissos</span>
+  <h2>Boas práticas editoriais</h2>
+
+  <p>
+    Um portal que resume o trabalho dos outros só se sustenta se for escrupuloso
+    com esse trabalho. Estas são as regras que o projeto segue — e pelas quais pode
+    ser cobrado.
+  </p>
+
+  <ul class="rules">
+    <li>
+      <b>A fonte é sempre creditada e linkada.</b> Nome do veículo e link para o
+      original aparecem em todo card, em toda página e em todo post publicado nas
+      redes. Não há exceção.
+    </li>
+    <li>
+      <b>Nunca republicamos o texto completo.</b> O conteúdo da matéria é lido
+      apenas para produzir o resumo e depois descartado — não fica armazenado nem é
+      exibido. O que o leitor vê é texto reescrito com palavras próprias.
+    </li>
+    <li>
+      <b>O resumo tem forma fixa:</b> dois parágrafos curtos — o que aconteceu e
+      por que isso importa para quem trabalha com software. Sem manchete
+      sensacionalista e sem opinião disfarçada de fato.
+    </li>
+    <li>
+      <b>Respeitamos as regras de cada site.</b> A leitura obedece ao
+      <code>robots.txt</code> do domínio, e os Termos de Uso do veículo são revisados
+      antes de qualquer fonte nova entrar na lista.
+    </li>
+    <li>
+      <b>Só entram fontes reputadas.</b> A lista de feeds é curada manualmente e
+      revisada; agregadores de baixa qualidade e sites de conteúdo gerado em massa
+      ficam de fora.
+    </li>
+    <li>
+      <b>Assumimos que a IA erra.</b> Os resumos são gerados por um modelo de
+      linguagem e podem conter imprecisões. Em caso de divergência,
+      <b>a matéria original é a que vale</b> — sempre.
+    </li>
+    <li>
+      <b>Correção e remoção são rápidas.</b> Apontou um erro, ou é o veículo e
+      prefere não aparecer aqui? Basta escrever: corrigimos ou removemos sem
+      discussão.
+    </li>
+    <li>
+      <b>O portal não é a notícia.</b> A proposta é encurtar o caminho do leitor até
+      a fonte, não substituí-la nem ficar com o tráfego dela.
+    </li>
+  </ul>
+
+  <p class="note">
+    Transparência: o IANoticias é um projeto independente, sem patrocínio,
+    publicidade ou conteúdo pago. Nenhuma fonte paga para aparecer e nenhuma posição
+    na home é vendida.
+  </p>
+</section>
+
+<!-- ---------------------------------------------------------------- -->
+<section class="about-sec" id="contato">
+  <span class="eyebrow">Fale com a gente</span>
+  <h2>Contato</h2>
+
+  <p>
+    Um endereço só, lido por gente de verdade. Sugestão de fonte, correção de
+    resumo, pedido de remoção ou conversa sobre o projeto — tudo chega no mesmo
+    lugar.
+  </p>
+
+  <p class="mail-line">
+    ✉ <a href="mailto:ianoticiaslv@gmail.com">ianoticiaslv@gmail.com</a>
+  </p>
+
+  <div class="about-cards">
+    <div class="panel">
+      <div class="bh"><span class="tag">01</span></div>
+      <h4>Sugerir uma fonte</h4>
+      <p>
+        Conhece um veículo ou blog que deveria estar na curadoria? Mande o nome e o
+        endereço do feed.
+      </p>
+      <a class="mail-btn"
+         href="mailto:ianoticiaslv@gmail.com?subject=Sugest%C3%A3o%20de%20fonte%20-%20IANoticias&amp;body=Nome%20do%20ve%C3%ADculo%3A%0AEndere%C3%A7o%20do%20site%3A%0AFeed%20RSS%20(se%20souber)%3A%0APor%20que%20vale%20a%20pena%3A%0A">
+        Sugerir fonte
+      </a>
+    </div>
+
+    <div class="panel">
+      <div class="bh"><span class="tag">02</span></div>
+      <h4>Corrigir ou remover</h4>
+      <p>
+        Resumo impreciso, crédito errado ou pedido de remoção por parte do veículo:
+        ajustamos ou retiramos assim que lermos.
+      </p>
+      <a class="mail-btn"
+         href="mailto:ianoticiaslv@gmail.com?subject=Corre%C3%A7%C3%A3o%20ou%20remo%C3%A7%C3%A3o%20-%20IANoticias&amp;body=Link%20da%20not%C3%ADcia%20no%20IANoticias%3A%0AO%20que%20est%C3%A1%20errado%3A%0ACorre%C3%A7%C3%A3o%20sugerida%3A%0A">
+        Pedir correção
+      </a>
+    </div>
+
+    <div class="panel">
+      <div class="bh"><span class="tag">03</span></div>
+      <h4>Falar sobre o projeto</h4>
+      <p>
+        Dúvidas sobre o método, imprensa, parcerias ou só uma ideia de melhoria para
+        o portal.
+      </p>
+      <a class="mail-btn"
+         href="mailto:ianoticiaslv@gmail.com?subject=Contato%20-%20IANoticias">
+        Enviar mensagem
+      </a>
+    </div>
+  </div>
+
+  <p class="note">
+    Pedidos de correção e de remoção têm prioridade sobre qualquer outro assunto na
+    caixa de entrada. Para agilizar, inclua sempre o link da notícia aqui no portal.
+  </p>
+</section>
+
+<p class="about-back">
+  <a href="/" style="color:var(--gold-deep);border-bottom:1px solid var(--gold-deep);padding-bottom:1px">← Voltar ao portal</a>
+</p>
+{% endblock %}

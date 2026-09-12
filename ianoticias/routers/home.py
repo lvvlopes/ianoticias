@@ -246,6 +246,19 @@ async def articles_fragment(
     )
 
 
+@router.get("/sobre")
+async def about(request: Request):
+    """Página estática: método da curadoria, compromissos editoriais e contato."""
+    return templates.TemplateResponse(
+        "sobre.html",
+        {
+            "request": request,
+            "is_admin": auth.is_admin(request),
+            "util_date_label": _pt_util_date(datetime.now()),
+        },
+    )
+
+
 @router.get("/login")
 async def login_form(request: Request, error: str | None = None):
     return templates.TemplateResponse(
