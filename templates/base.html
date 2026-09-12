@@ -202,17 +202,71 @@
     .panel .stat .k{color:var(--ink-3);text-transform:uppercase;font-size:10.5px;letter-spacing:.08em}
     .panel .stat .v{color:var(--ink);font-weight:600}
 
-    /* Filtros por categoria */
-    .filters{display:flex;flex-wrap:wrap;gap:8px;margin:34px 0 26px}
-    .filters button{
+    /* Utilitário de acessibilidade: visível só para leitores de tela */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+      clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+    /* ---------------- Busca + filtros ---------------- */
+    .searchbar{margin:34px 0 10px;padding:18px 20px 16px;background:var(--panel);
+      border:1.5px solid var(--ink);border-radius:4px}
+    .sb-row{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
+    .sb-field{display:flex;flex-direction:column;gap:6px;min-width:150px}
+    .sb-grow{flex:1 1 320px;min-width:min(100%,280px)}
+    .sb-lab{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--ink-3)}
+    .sb-input{display:flex;align-items:center;gap:8px;background:var(--paper);
+      border:1.5px solid var(--line-strong);border-radius:2px;padding:0 10px;transition:border-color .15s}
+    .sb-input:focus-within{border-color:var(--ink)}
+    .sb-icon{font-size:19px;line-height:1;color:var(--ink-3);flex:none}
+    .searchbar input[type="search"]{flex:1;min-width:0;border:none;background:none;outline:none;
+      font-family:var(--serif);font-size:16px;color:var(--ink);padding:10px 0}
+    .searchbar input[type="search"]::placeholder{color:var(--ink-3);opacity:.8}
+    .searchbar input[type="search"]::-webkit-search-cancel-button{cursor:pointer}
+    .searchbar select,.searchbar input[type="date"]{
+      font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--paper);
+      border:1.5px solid var(--line-strong);border-radius:2px;padding:9px 10px;max-width:220px;
+      cursor:pointer;transition:border-color .15s}
+    .searchbar select:hover,.searchbar input[type="date"]:hover{border-color:var(--ink)}
+    .sb-hint{margin:2px 0 0;font-family:var(--mono);font-size:10.5px;line-height:1.6;
+      color:var(--ink-3);letter-spacing:.01em}
+    .sb-hint code{background:var(--paper-2);padding:1px 5px;border-radius:2px;font-size:10.5px}
+    /* Spinner discreto enquanto a busca vai ao servidor */
+    .sb-spin{flex:none;width:13px;height:13px;border-radius:50%;
+      border:2px solid var(--line-strong);border-top-color:var(--gold-deep);
+      opacity:0;transition:opacity .15s}
+    .sb-spin.htmx-request{opacity:1;animation:sb-rot .7s linear infinite}
+    @keyframes sb-rot{to{transform:rotate(360deg)}}
+    .sb-row-2{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
+      margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+    .sb-clear{flex:none;margin-left:auto;text-decoration:none}
+
+    /* Linha de resumo dos resultados */
+    .result-line{margin:0 0 6px;font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;
+      text-transform:uppercase;color:var(--ink-3)}
+    .result-line b{color:var(--ink)}
+    .rl-q{background:var(--gold);color:var(--ink);padding:2px 7px;border-radius:2px;
+      text-transform:none;font-weight:600}
+
+    /* Trechos que casaram com a busca */
+    mark{background:rgba(244,178,35,.55);color:inherit;padding:0 2px;border-radius:2px}
+
+    /* Hashtags viram atalho de busca */
+    .tag-link{color:var(--ink-3);transition:color .15s}
+    .tag-link:hover,.tag-link:focus-visible{color:var(--gold-deep);text-decoration:underline}
+
+    /* Filtros por categoria (radios com aparência de chip) */
+    .filters{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;border:none;min-width:0}
+    .filters label{
       display:inline-flex;align-items:center;gap:8px;
       font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
       background:transparent;border:1.5px solid var(--line-strong);
       padding:8px 14px;border-radius:2px;color:var(--ink-2);cursor:pointer;transition:all .15s;
     }
-    .filters button:hover{color:var(--ink);border-color:var(--ink)}
-    .filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-    .filters button .dot{width:8px;height:8px;border-radius:50%}
+    .filters label:hover{color:var(--ink);border-color:var(--ink)}
+    .filters input:checked + label{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+    .filters input:focus-visible + label{outline:2.5px solid var(--gold);outline-offset:2px}
+    .filters label .dot{width:8px;height:8px;border-radius:50%}
+    .filters label .ct{opacity:.6;font-weight:400}
 
     /* Sections */
     .section{padding:46px 0 8px;border-top:1px solid var(--line-strong)}
@@ -444,6 +498,39 @@
     if (!box) return;
     const open = box.classList.toggle('expanded');
     btn.textContent = open ? 'Ver menos' : 'Veja mais';
+  });
+
+  // Mantém a URL da busca limpa: tira os campos vazios e os valores padrão
+  // antes do HTMX montar a query string (e, com hx-push-url, a URL da barra).
+  // Só mexe nas requisições do formulário de busca.
+  document.body.addEventListener('htmx:configRequest', function (evt) {
+    const elt = evt.detail.elt;
+    if (!elt || elt.id !== 'filters') return;
+    const p = evt.detail.parameters;
+    for (const key of Object.keys(p)) {
+      if (p[key] === '' || p[key] == null) delete p[key];
+    }
+    if (p.categoria === 'todas') delete p.categoria;
+    if (p.ordem === 'recentes') delete p.ordem;
+  });
+
+  // Depois de uma busca, leva o leitor até o começo da lista — senão o
+  // resultado troca fora da tela e parece que nada aconteceu.
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    if (evt.detail.target && evt.detail.target.id === 'article-list') {
+      // "Limpar filtros" só faz sentido quando há filtro — e a presença da
+      // linha de resumo na lista é exatamente esse sinal.
+      const clear = document.getElementById('sb-clear');
+      if (clear) clear.hidden = !document.querySelector('#article-list .result-line');
+
+      const bar = document.getElementById('filters');
+      if (bar) {
+        const top = bar.getBoundingClientRect().top;
+        if (top < 0 || top > window.innerHeight) {
+          bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
   });
 
   // Exibe erros do HTMX (ex.: 502 do publish do Instagram) no lugar do botão,

@@ -14,23 +14,24 @@
   </div>
 
   <span class="k">{{ CATEGORY_KICKERS[article.category.value] }}</span>
-  <h3><a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">{{ article.ig_title }}</a></h3>
+  <h3><a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">{{ article.ig_title | highlight(hl_terms) }}</a></h3>
 
   {# Só o 1º parágrafo aparece; o resto abre no "Veja mais". #}
   {% set _paras = (article.ig_content or '').split('\n\n') %}
-  <p class="card-lead">{{ _paras[0] }}</p>
+  <p class="card-lead">{{ _paras[0] | highlight(hl_terms) }}</p>
   {% if _paras | length > 1 %}
-    <p class="more-text">{{ _paras[1:] | join('\n\n') }}</p>
+    <p class="more-text">{{ _paras[1:] | join('\n\n') | highlight(hl_terms) }}</p>
   {% endif %}
 
   {% if article.hashtags %}
     <p class="hashtags">
-      {% for tag in article.hashtags %}#{{ tag }}{% if not loop.last %} · {% endif %}{% endfor %}
+      {# Cada hashtag é um atalho: clicar busca aquele termo no acervo. #}
+      {% for tag in article.hashtags %}<a class="tag-link" href="/?q={{ tag | urlencode }}" title="Buscar &quot;{{ tag }}&quot;">#{{ tag }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
     </p>
   {% endif %}
 
   <div class="foot">
-    <span class="src" title="{{ article.source_name }}">{{ article.source_name }}</span>
+    <span class="src" title="{{ article.source_name }}">{{ article.source_name | highlight(hl_terms) }}</span>
     <span>{{ article.published_at.strftime('%H:%M') }}</span>
   </div>
 

@@ -11,6 +11,7 @@ from datetime import date
 from sqlalchemy import func, select, update
 
 from ianoticias.db.models import Article, Category, IgStatus
+from ianoticias.text_search import ACCENT_DST, ACCENT_SRC, like_pattern, parse_query
 
 
 async def exists_by_url(session, source_url: str) -> bool:
@@ -112,5 +113,87 @@ async def list_for_home(
 
 async def distinct_days(session, limit: int = 14) -> list[date]:
     stmt = select(Article.day).distinct().order_by(Article.day.desc()).limit(limit)
+    rows = await session.execute(stmt)
+    return [r[0] for r in rows.all()]
+
+
+# ---------------------------------------------------------------------------
+# Busca / filtros da home
+# ---------------------------------------------------------------------------
+
+def _haystack():
+    """Expressão SQL com todo o texto pesquisável de um artigo, normalizado.
+
+    `translate` remove acentos e `lower` iguala a caixa — a mesma dupla que
+    `text_search.fold()` aplica no termo digitado, então "gestao" acha "gestão".
+    """
+    blob = func.concat_ws(
+        " ",
+        Article.ig_title,
+        Article.title_original,
+        Article.ig_content,
+        Article.source_name,
+        func.array_to_string(Article.hashtags, " "),
+    )
+    return func.lower(func.translate(blob, ACCENT_SRC, ACCENT_DST))
+
+
+ORDERS = ("recentes", "antigas", "fonte")
+
+
+async def search_for_home(
+    session,
+    *,
+    q: str | None = None,
+    source: str | None = None,
+    day_from: date | None = None,
+    day_to: date | None = None,
+    order: str = "recentes",
+) -> list[Article]:
+    """Artigos que batem com a busca — sem filtro de categoria.
+
+    A categoria fica de fora de propósito: o router usa esta lista para contar
+    quantos resultados cada editoria tem e só então aplica o filtro escolhido.
+    """
+    stmt = select(Article)
+
+    include, exclude = parse_query(q)
+    if include or exclude:
+        hay = _haystack()
+        for term in include:
+            stmt = stmt.where(hay.like(like_pattern(term), escape="\\"))
+        for term in exclude:
+            stmt = stmt.where(~hay.like(like_pattern(term), escape="\\"))
+
+    if source:
+        stmt = stmt.where(Article.source_name == source)
+    if day_from is not None:
+        stmt = stmt.where(Article.day >= day_from)
+    if day_to is not None:
+        stmt = stmt.where(Article.day <= day_to)
+
+    if order == "antigas":
+        stmt = stmt.order_by(
+            Article.day.asc(), Article.published_at.asc(), Article.created_at.asc()
+        )
+    elif order == "fonte":
+        stmt = stmt.order_by(
+            Article.source_name.asc(), Article.day.desc(), Article.published_at.desc()
+        )
+    else:  # "recentes" (padrão) — mesma ordenação da home sem busca
+        stmt = stmt.order_by(
+            Article.day.desc(),
+            Article.featured.desc(),
+            Article.published_at.desc(),
+            Article.created_at.desc(),
+        )
+
+    rows = await session.execute(stmt)
+    return list(rows.scalars().all())
+
+
+async def list_source_names(session) -> list[str]:
+    """Fontes distintas, em ordem alfabética — alimenta o select de fonte."""
+    stmt = select(Article.source_name).distinct().order_by(Article.source_name)
     rows = await session.execute(stmt)
     return [r[0] for r in rows.all()]

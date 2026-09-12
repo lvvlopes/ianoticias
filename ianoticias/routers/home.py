@@ -14,6 +14,7 @@ from ianoticias.db.models import Article, Category
 from ianoticias.repositories import articles as repo
 from ianoticias.security import auth
 from ianoticias.templating import templates
+from ianoticias.text_search import parse_query
 
 router = APIRouter(tags=["ui"])
 
@@ -62,19 +63,79 @@ def _parse_category(raw: str | None) -> Category | None:
 
 
 def _build_home_context(items: list[Article]) -> dict:
-    """Deriva hero/subs/trending/ticker/totais a partir da lista ordenada."""
-    totals = {"ia": 0, "eng_dev_ia": 0, "gestao_ia": 0}
-    for a in items:
-        totals[a.category.value] += 1
+    """Deriva hero/subs/trending/ticker a partir da lista completa e ordenada.
 
+    Independe da busca: o topo do portal continua sendo o topo do portal
+    mesmo quando o leitor está filtrando a lista lá embaixo.
+    """
     return {
-        "all_items": items,
-        "total_count": len(items),
         "hero": items[0] if items else None,
         "subs": items[1:3],
         "trending": items[1:6],
         "ticker_items": items[:10],
-        "totals": totals,
+    }
+
+
+def _parse_day(raw: str | None) -> date | None:
+    """Aceita o formato do <input type="date"> (YYYY-MM-DD); ignora lixo."""
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw.strip())
+    except ValueError:
+        return None
+
+
+def _count_by_category(items: Iterable[Article]) -> dict[str, int]:
+    totals = {cat: 0 for cat in ("ia", "eng_dev_ia", "gestao_ia")}
+    for a in items:
+        totals[a.category.value] += 1
+    return totals
+
+
+async def _search_context(
+    request: Request,
+    session: AsyncSession,
+    *,
+    categoria: str | None,
+    q: str | None,
+    fonte: str | None,
+    de: str | None,
+    ate: str | None,
+    ordem: str | None,
+) -> dict:
+    """Roda a busca e monta tudo que a lista (e a barra de filtros) precisa."""
+    category = _parse_category(categoria)
+    q = (q or "").strip()
+    fonte = (fonte or "").strip() or None
+    day_from = _parse_day(de)
+    day_to = _parse_day(ate)
+    ordem = ordem if ordem in repo.ORDERS else "recentes"
+
+    # `matched` ignora a categoria de propósito — é o universo da busca, e é
+    # dele que saem os contadores de cada chip de editoria.
+    matched = await repo.search_for_home(
+        session, q=q, source=fonte, day_from=day_from, day_to=day_to, order=ordem
+    )
+    filtered = matched if category is None else [a for a in matched if a.category == category]
+
+    include_terms, _ = parse_query(q)
+    return {
+        "request": request,
+        "grouped": _group_by_day(filtered),
+        "selected_category": categoria if categoria in ("ia", "eng_dev_ia", "gestao_ia") else "todas",
+        "q": q,
+        "fonte": fonte or "",
+        "de": de or "",
+        "ate": ate or "",
+        "ordem": ordem,
+        "hl_terms": include_terms,
+        "totals": _count_by_category(matched),
+        "total_count": len(matched),
+        "result_count": len(filtered),
+        "has_filters": bool(q or fonte or day_from or day_to or ordem != "recentes" or category),
+        "is_admin": auth.is_admin(request),
+        "day_label": _pt_day_label,
     }
 
 
@@ -82,27 +143,33 @@ def _build_home_context(items: list[Article]) -> dict:
 async def home(
     request: Request,
     categoria: str | None = None,
+    q: str | None = None,
+    fonte: str | None = None,
+    de: str | None = None,
+    ate: str | None = None,
+    ordem: str | None = None,
     session: AsyncSession = Depends(get_session),
 ):
-    category = _parse_category(categoria)
-    # Para as métricas globais (contadores por categoria, hero, ticker),
-    # precisamos sempre da lista COMPLETA — o filtro afeta apenas a lista
-    # renderizada por dia mais abaixo.
-    all_items = await repo.list_for_home(session, category=None)
-    filtered = all_items if category is None else [a for a in all_items if a.category == category]
+    ctx = await _search_context(
+        request, session, categoria=categoria, q=q, fonte=fonte, de=de, ate=ate, ordem=ordem
+    )
 
-    grouped = _group_by_day(filtered)
-    ctx = _build_home_context(all_items)
+    # Requisição do HTMX (usuário mexeu na busca): devolve só a lista.
+    # Os contadores dos chips viajam junto, com swap out-of-band.
+    if request.headers.get("hx-request") == "true":
+        return templates.TemplateResponse(
+            "partials/article_list.html", {**ctx, "oob_counts": True}
+        )
+
+    # Carga completa da página: hero/ticker/rail vêm sempre do acervo inteiro.
+    all_items = await repo.list_for_home(session, category=None)
     return templates.TemplateResponse(
         "index.html",
         {
-            "request": request,
-            "grouped": grouped,
-            "selected_category": categoria or "todas",
-            "is_admin": auth.is_admin(request),
-            "util_date_label": _pt_util_date(datetime.now()),
-            "day_label": _pt_day_label,
             **ctx,
+            "sources": await repo.list_source_names(session),
+            "util_date_label": _pt_util_date(datetime.now()),
+            **_build_home_context(all_items),
         },
     )
 
@@ -111,21 +178,19 @@ async def home(
 async def articles_fragment(
     request: Request,
     categoria: str | None = None,
+    q: str | None = None,
+    fonte: str | None = None,
+    de: str | None = None,
+    ate: str | None = None,
+    ordem: str | None = None,
     session: AsyncSession = Depends(get_session),
 ):
-    """Fragmento HTMX: só a lista, sem o layout — usado pelos filtros de categoria."""
-    category = _parse_category(categoria)
-    items = await repo.list_for_home(session, category=category)
-    grouped = _group_by_day(items)
+    """Fragmento HTMX: só a lista, sem o layout."""
+    ctx = await _search_context(
+        request, session, categoria=categoria, q=q, fonte=fonte, de=de, ate=ate, ordem=ordem
+    )
     return templates.TemplateResponse(
-        "partials/article_list.html",
-        {
-            "request": request,
-            "grouped": grouped,
-            "selected_category": categoria or "todas",
-            "is_admin": auth.is_admin(request),
-            "day_label": _pt_day_label,
-        },
+        "partials/article_list.html", {**ctx, "oob_counts": True}
     )
 
 

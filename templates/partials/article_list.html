@@ -1,18 +1,48 @@
 {#
   Renderiza a lista principal (agrupada por dia) ou o estado vazio.
-  Usada tanto no index (bloco inicial) quanto pelo fragmento HTMX de filtro.
+  Usada tanto no index (bloco inicial) quanto pelo fragmento HTMX da busca.
 #}
+{% if has_filters %}
+  <p class="result-line" role="status" aria-live="polite">
+    <b>{{ result_count }}</b> resultado{% if result_count != 1 %}s{% endif %}
+    {%- if q %} para <span class="rl-q">{{ q }}</span>{% endif %}
+    {%- if selected_category != 'todas' %} em {{ CATEGORY_SECTION_TITLES[selected_category] }}{% endif %}
+    {%- if fonte %} · fonte <b>{{ fonte }}</b>{% endif %}
+    {%- if de or ate %} · {{ de or 'início' }} → {{ ate or 'hoje' }}{% endif %}
+  </p>
+{% endif %}
+
 {% if grouped %}
   {% for day, items in grouped.items() %}
     {% include "partials/day_group.html" %}
   {% endfor %}
 {% else %}
   <div class="empty">
-    Nenhuma notícia por aqui ainda.
-    {% if is_admin %}
-      Clique em <b>Buscar Notícias</b> no topo para popular o portal.
+    {% if has_filters %}
+      Nenhuma notícia bate com esses filtros.
+      Tente menos palavras, tire o recorte de data ou
+      <a href="/" style="text-decoration:underline">limpe a busca</a>.
     {% else %}
-      Volte em instantes — ou entre como admin para disparar a busca.
+      Nenhuma notícia por aqui ainda.
+      {% if is_admin %}
+        Clique em <b>Buscar Notícias</b> no topo para popular o portal.
+      {% else %}
+        Volte em instantes — ou entre como admin para disparar a busca.
+      {% endif %}
     {% endif %}
   </div>
+{% endif %}
+
+{#
+  Swap out-of-band: os contadores dos chips e do painel lateral vivem fora de
+  #article-list, então viajam de carona na resposta do HTMX para não ficarem
+  desatualizados depois de uma busca.
+#}
+{% if oob_counts %}
+  <span id="count-todas" hx-swap-oob="true" class="mono ct">· {{ total_count }}</span>
+  {% for cat in CATEGORIES_ORDERED %}
+    <span id="count-{{ cat }}" hx-swap-oob="true" class="mono ct">· {{ totals[cat] }}</span>
+    <span id="rail-count-{{ cat }}" hx-swap-oob="true" class="v">{{ totals[cat] }}</span>
+  {% endfor %}
+  <span id="rail-count-total" hx-swap-oob="true" class="v">{{ total_count }}</span>
 {% endif %}

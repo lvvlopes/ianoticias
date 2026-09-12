@@ -18,6 +18,34 @@ um card 1080×1080 e permite publicar direto no IG. A home mostra as notícias
 
 ---
 
+## Busca e filtros
+
+A home tem uma barra de busca que filtra o acervo sem sair da página (HTMX
+troca só a lista) e reflete tudo na URL — então qualquer combinação vira um
+link compartilhável e recarregável.
+
+| Parâmetro | O que faz |
+|-----------|-----------|
+| `q` | Texto livre em título, resumo, nome da fonte e hashtags |
+| `categoria` | `ia`, `eng_dev_ia`, `gestao_ia` ou `todas` |
+| `fonte` | Nome exato da fonte (ex.: `TechCrunch`) |
+| `de` / `ate` | Recorte de datas, `AAAA-MM-DD` |
+| `ordem` | `recentes` (padrão), `antigas`, `fonte` |
+
+Sintaxe do campo `q`:
+
+- `agentes openai` — precisa conter **os dois** termos
+- `"modelo de raciocínio"` — frase exata
+- `-google` — exclui quem menciona o termo
+
+A busca ignora acento e caixa (`gestao` acha "Gestão"), e os trechos que
+casaram aparecem destacados no card. As hashtags dos cards são links para a
+busca daquele termo.
+
+Exemplo: `/?q=agentes+-google&categoria=ia&de=2026-09-01&ordem=antigas`
+
+---
+
 ## Guias de configuração
 
 Cada integração tem seu passo a passo detalhado, com todas as armadilhas
