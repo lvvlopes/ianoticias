@@ -143,7 +143,14 @@
 {% endif %}
 
 <!-- Filtros -->
-<div id="filter-zone">
+{#
+  hx-sync: chips e painel disputam o mesmo alvo (#article-list). Sem isso,
+  digitar e clicar numa editoria logo em seguida deixa duas requisições no
+  ar — e se a mais antiga chegar depois, ela sobrescreve o resultado da mais
+  nova (lista de um filtro, chips de outro). `replace` aborta a que estava
+  em voo: vence sempre a última coisa que o leitor fez.
+#}
+<div id="filter-zone" hx-sync="#filter-zone:replace">
 
   {# 1) Editorias: o filtro de sempre, sempre visível. #}
   <div class="filter-row">
