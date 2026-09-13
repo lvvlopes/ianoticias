@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
 
+from ianoticias.config.settings import settings
 from ianoticias.text_search import fold
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -101,7 +102,13 @@ def highlight(text: str | None, terms: list[str] | None) -> Markup:
 
 templates.env.filters["highlight"] = highlight
 
+# Domínio canônico (PUBLIC_SITE_URL), sem barra no fim. Os templates montam os
+# links de compartilhamento em cima dele — precisam ser absolutos para valer
+# fora do site.
+SITE_URL = (settings.public_site_url or "").rstrip("/")
+
 templates.env.globals.update(
+    SITE_URL=SITE_URL,
     CATEGORY_LABELS=CATEGORY_LABELS,
     CATEGORY_KICKERS=CATEGORY_KICKERS,
     CATEGORY_COLORS=CATEGORY_COLORS,

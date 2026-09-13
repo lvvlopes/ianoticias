@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}IANoticias — Inteligência artificial, decodificada{% endblock %}</title>
 
+  {# Preview do link quando a página é compartilhada (WhatsApp, X, LinkedIn...). #}
+  {% block meta %}
+    <meta name="description" content="Curadoria automática de notícias de inteligência artificial, com resumo curto e a fonte sempre creditada." />
+    <meta property="og:site_name" content="IANoticias" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="IANoticias — Inteligência artificial, decodificada" />
+    <meta property="og:description" content="Curadoria automática de notícias de inteligência artificial, com resumo curto e a fonte sempre creditada." />
+    <meta name="twitter:card" content="summary_large_image" />
+  {% endblock %}
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -364,7 +374,7 @@
     .card .foot{margin-top:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.03em;
       padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
     .card .foot .src{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .card .actions{display:flex;gap:6px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);flex-wrap:nowrap;align-items:center}
+    .card .actions{display:flex;gap:6px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);flex-wrap:wrap;align-items:center}
     .card .actions .btn-ghost{font-size:10px;padding:6px 9px;white-space:nowrap;flex:0 0 auto}
     .btn-ghost{
       display:inline-flex;align-items:center;gap:6px;
@@ -373,6 +383,31 @@
       padding:7px 12px;border-radius:2px;cursor:pointer;transition:all .15s;
     }
     .btn-ghost:hover{color:var(--ink);border-color:var(--ink)}
+
+    /* --- Compartilhar ------------------------------------------------- */
+    /* O botão fica sempre visível; a bandeja de redes só abre quando o
+       navegador não tem a folha nativa de compartilhamento (desktop). */
+    .share{position:relative;display:inline-flex}
+    .share-menu{position:absolute;z-index:60;bottom:calc(100% + 6px);left:0;min-width:186px;
+      background:var(--panel);border:1.5px solid var(--ink);border-radius:3px;
+      padding:6px;display:flex;flex-direction:column;gap:2px;
+      box-shadow:0 10px 26px rgba(20,20,27,.18)}
+    .share-menu[hidden]{display:none}
+    .share-menu a,.share-menu button{
+      display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+      background:none;border:none;cursor:pointer;border-radius:2px;padding:8px 10px;
+      font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--ink-2)}
+    .share-menu a:hover,.share-menu button:hover{background:var(--paper-2);color:var(--ink)}
+    .share-menu .sep{height:1px;background:var(--line);margin:4px 2px}
+    .share-menu .ico{flex:none;width:15px;text-align:center;font-size:13px;color:var(--gold-deep)}
+    .share-done{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--green)}
+
+    /* Barra de compartilhamento da página da notícia (variante clara/escura) */
+    .share-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .share-row .lab{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--ink-3);margin-right:4px}
     .btn-ig{background:var(--ink);color:var(--paper);border-color:var(--ink)}
     .btn-ig:hover:not(:disabled){background:var(--gold-deep);border-color:var(--gold-deep)}
     .btn-ig:disabled{background:var(--green);border-color:var(--green);color:var(--paper);opacity:.85;cursor:default}
@@ -522,6 +557,98 @@
     if (!box) return;
     const open = box.classList.toggle('expanded');
     btn.textContent = open ? 'Ver menos' : 'Veja mais';
+  });
+
+  // --- Compartilhar notícia -------------------------------------------------
+  // Um clique, dois caminhos: onde o navegador tem folha nativa de
+  // compartilhamento (celular, Safari, Edge), abre ela; onde não tem, abre a
+  // bandeja com as redes + "Copiar link". Delegação global por causa do HTMX.
+  function fecharBandejas(exceto) {
+    document.querySelectorAll('.share-menu').forEach(function (m) {
+      if (m !== exceto) m.hidden = true;
+    });
+  }
+
+  async function copiarLink(url, btn) {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (err) {
+      // clipboard bloqueado (http, permissão): cai para o seletor manual
+      const tmp = document.createElement('textarea');
+      tmp.value = url;
+      tmp.style.position = 'fixed';
+      tmp.style.opacity = '0';
+      document.body.appendChild(tmp);
+      tmp.select();
+      try { document.execCommand('copy'); } catch (e) { /* desiste em silêncio */ }
+      document.body.removeChild(tmp);
+    }
+    if (!btn) return;
+    const antes = btn.innerHTML;
+    btn.innerHTML = '<span class="share-done">✓ Link copiado</span>';
+    setTimeout(function () { btn.innerHTML = antes; }, 1800);
+  }
+
+  // A bandeja abre para cima (o botão costuma ficar no rodapé do card). Perto
+  // do topo da janela, ou colada na borda direita, ela viraria — então aqui
+  // medimos e invertemos o lado antes de o leitor ver.
+  function posicionarBandeja(menu) {
+    menu.style.top = '';
+    menu.style.bottom = '';
+    menu.style.left = '';
+    menu.style.right = '';
+    const r = menu.getBoundingClientRect();
+    if (r.top < 8) {
+      menu.style.bottom = 'auto';
+      menu.style.top = 'calc(100% + 6px)';
+    }
+    if (menu.getBoundingClientRect().right > window.innerWidth - 8) {
+      menu.style.left = 'auto';
+      menu.style.right = '0';
+    }
+  }
+
+  document.addEventListener('click', async function (e) {
+    const copy = e.target.closest('[data-copy-link]');
+    if (copy) {
+      e.preventDefault();
+      await copiarLink(copy.getAttribute('data-copy-link'), copy);
+      return;
+    }
+
+    const btn = e.target.closest('[data-share]');
+    if (!btn) {
+      fecharBandejas(null);  // clique fora fecha o que estiver aberto
+      return;
+    }
+    e.preventDefault();
+
+    const url = btn.getAttribute('data-share');
+    const title = btn.getAttribute('data-share-title') || document.title;
+    const menu = btn.parentElement.querySelector('.share-menu');
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: title, text: title, url: url });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;  // usuário cancelou
+        // qualquer outro erro: segue para a bandeja
+      }
+    }
+
+    if (menu) {
+      const abrir = menu.hidden;
+      fecharBandejas(menu);
+      menu.hidden = !abrir;
+      if (!menu.hidden) posicionarBandeja(menu);
+    } else {
+      await copiarLink(url, btn);
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') fecharBandejas(null);
   });
 
   // Abre/fecha o painel de busca detalhada. Fechar não descarta os filtros:

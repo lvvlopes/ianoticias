@@ -1,0 +1,36 @@
+{#
+  Botão "Compartilhar" + bandeja de redes.
+
+  Espera no contexto:
+    share_url    — URL absoluta do permalink da notícia
+    share_title  — título usado no texto compartilhado
+    share_label  — (opcional) rótulo do botão; padrão "Compartilhar"
+    share_class  — (opcional) classe extra do botão; padrão "btn-ghost"
+
+  O clique é tratado pelo JS do base.html: se o navegador tem a folha nativa
+  de compartilhamento, ela abre e esta bandeja nem aparece.
+#}
+{% set _texto = share_title ~ ' — via IANoticias' %}
+<span class="share">
+  <button type="button" class="{{ share_class | default('btn-ghost', true) }}"
+          data-share="{{ share_url }}"
+          data-share-title="{{ share_title }}"
+          aria-haspopup="true"
+          title="Compartilhar esta notícia">
+    ↗ {{ share_label | default('Compartilhar', true) }}
+  </button>
+
+  <span class="share-menu" hidden>
+    <a href="https://wa.me/?text={{ (_texto ~ ' ' ~ share_url) | urlencode }}"
+       target="_blank" rel="noopener noreferrer"><span class="ico">✆</span> WhatsApp</a>
+    <a href="https://t.me/share/url?url={{ share_url | urlencode }}&amp;text={{ _texto | urlencode }}"
+       target="_blank" rel="noopener noreferrer"><span class="ico">➤</span> Telegram</a>
+    <a href="https://twitter.com/intent/tweet?url={{ share_url | urlencode }}&amp;text={{ _texto | urlencode }}"
+       target="_blank" rel="noopener noreferrer"><span class="ico">𝕏</span> X / Twitter</a>
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ share_url | urlencode }}"
+       target="_blank" rel="noopener noreferrer"><span class="ico">in</span> LinkedIn</a>
+    <a href="mailto:?subject={{ share_title | urlencode }}&amp;body={{ _texto | urlencode }}%0A%0A{{ share_url | urlencode }}"><span class="ico">✉</span> E-mail</a>
+    <span class="sep"></span>
+    <button type="button" data-copy-link="{{ share_url }}"><span class="ico">⧉</span> Copiar link</button>
+  </span>
+</span>

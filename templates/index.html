@@ -74,6 +74,12 @@
         <span>{{ hero.published_at.strftime('%d/%m · %H:%M') }}</span>
         <span>·</span>
         <a href="{{ hero.source_url }}" target="_blank" rel="noopener noreferrer">Ler matéria completa ↗</a>
+        <span>·</span>
+        <a href="/noticia/{{ hero.id }}">Abrir no portal</a>
+        <span>·</span>
+        {% with share_url=SITE_URL ~ '/noticia/' ~ hero.id, share_title=hero.ig_title, share_class='hero-more' %}
+          {% include "partials/share_button.html" %}
+        {% endwith %}
         {% if _hp | length > 1 %}
           <span>·</span>
           <button type="button" class="hero-more" data-toggle-more>Veja mais</button>

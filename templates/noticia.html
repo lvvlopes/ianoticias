@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.ig_title }} — IANoticias{% endblock %}
+
+{# Preview do link nas redes: título, resumo e imagem da matéria. #}
+{% block meta %}
+  <link rel="canonical" href="{{ share_url }}" />
+  <meta name="description" content="{{ share_summary }}" />
+  <meta property="og:site_name" content="IANoticias" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="{{ share_url }}" />
+  <meta property="og:title" content="{{ article.ig_title }}" />
+  <meta property="og:description" content="{{ share_summary }}" />
+  {% if share_image %}<meta property="og:image" content="{{ share_image }}" />{% endif %}
+  <meta property="article:published_time" content="{{ article.published_at.isoformat() }}" />
+  <meta property="article:section" content="{{ CATEGORY_SECTION_TITLES[article.category.value] }}" />
+  <meta name="twitter:card" content="{% if share_image %}summary_large_image{% else %}summary{% endif %}" />
+  <meta name="twitter:title" content="{{ article.ig_title }}" />
+  <meta name="twitter:description" content="{{ share_summary }}" />
+  {% if share_image %}<meta name="twitter:image" content="{{ share_image }}" />{% endif %}
+{% endblock %}
+
+{% block head_extra %}
+<style>
+  .art{max-width:760px;margin:0 auto;padding:38px 0 20px}
+  .art-crumb{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.1em;
+             text-transform:uppercase;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:8px;
+             align-items:center;margin-bottom:18px}
+  .art-crumb a{color:var(--gold-deep)}
+  .art-crumb a:hover{text-decoration:underline}
+
+  .art h1{font-family:var(--display);font-weight:700;font-size:40px;line-height:1.08;
+          letter-spacing:-.03em;margin:8px 0 18px}
+  .art-meta{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
+            font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--ink-3);
+            text-transform:uppercase;padding-bottom:18px;border-bottom:1.5px solid var(--ink)}
+  .art-meta .src{color:var(--ink);font-weight:600}
+
+  .art-figure{margin:26px 0 0;border:1.5px solid var(--ink);border-radius:4px;overflow:hidden;
+              background:var(--panel)}
+  .art-figure img{display:block;width:100%;height:auto}
+
+  .art-body{font-family:var(--serif);font-size:19.5px;line-height:1.62;color:var(--ink-2);
+            margin:28px 0 0;white-space:pre-line}
+  .art-body p{margin:0 0 20px}
+  .art-body p:first-child::first-letter{font-family:var(--display);font-weight:700;font-size:3.1em;
+            line-height:.82;float:left;margin:6px 10px 0 0;color:var(--ink)}
+
+  .art-source{background:var(--panel);border:1.5px solid var(--ink);border-radius:4px;
+              padding:20px 22px;margin:8px 0 0}
+  .art-source .lab{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;
+                   text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:8px}
+  .art-source .name{font-family:var(--display);font-weight:600;font-size:20px;
+                    letter-spacing:-.01em;margin:0 0 6px}
+  .art-source p{font-size:14.5px;color:var(--ink-2);margin:0 0 16px;line-height:1.45}
+  .art-source .btn-read{display:inline-flex;align-items:center;gap:8px;background:var(--ink);
+                        color:var(--paper);border:1.5px solid var(--ink);border-radius:2px;
+                        padding:10px 16px;font-family:var(--mono);font-size:11px;font-weight:600;
+                        letter-spacing:.08em;text-transform:uppercase}
+  .art-source .btn-read:hover{background:var(--gold-deep);border-color:var(--gold-deep)}
+
+  .art-share{margin:26px 0 0;padding:18px 0 0;border-top:1px dashed var(--line-strong)}
+  .art-tags{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin:20px 0 0;
+            letter-spacing:.02em;line-height:1.9}
+  .art-foot{margin:34px 0 60px;padding-top:18px;border-top:1px solid var(--line);
+            font-family:var(--mono);font-size:10.5px;line-height:1.8;letter-spacing:.04em;
+            color:var(--ink-3)}
+
+  @media(max-width:700px){
+    .art h1{font-size:30px}
+    .art-body{font-size:18px}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="art">
+  <div class="art-crumb">
+    <a href="/">Home</a>
+    <span>›</span>
+    <a href="/?categoria={{ article.category.value }}">{{ CATEGORY_SECTION_TITLES[article.category.value] }}</a>
+    <span>›</span>
+    <span>{{ day_label }}</span>
+  </div>
+
+  <span class="eyebrow">{{ CATEGORY_KICKERS[article.category.value] }}</span>
+  <h1>{{ article.ig_title }}</h1>
+
+  <div class="art-meta">
+    <span class="src">{{ article.source_name }}</span>
+    <span>{{ article.published_at.strftime('%d/%m/%Y · %H:%M') }}</span>
+    {% if article.featured %}<span style="color:var(--gold-deep)">★ Destaque do dia</span>{% endif %}
+  </div>
+
+  {% set img = article.source_image_url or article.image_url %}
+  {% if img %}
+    <figure class="art-figure">
+      <img src="{{ img }}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+    </figure>
+  {% endif %}
+
+  <div class="art-body">
+    {% for p in (article.ig_content or '').split('\n\n') %}
+      {% if p.strip() %}<p>{{ p.strip() }}</p>{% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="art-source">
+    <span class="lab">Resumo do IANoticias · a matéria é de</span>
+    <p class="name">{{ article.source_name }}</p>
+    <p>
+      O texto acima é um resumo reescrito. A apuração, o texto integral e os
+      créditos são da fonte — abra o original para ler na íntegra.
+    </p>
+    <a class="btn-read" href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">
+      Ler matéria original ↗
+    </a>
+  </div>
+
+  <div class="art-share">
+    <div class="share-row">
+      <span class="lab">Compartilhar</span>
+      <a class="btn-ghost" href="https://wa.me/?text={{ (article.ig_title ~ ' — via IANoticias ' ~ share_url) | urlencode }}"
+         target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      <a class="btn-ghost" href="https://twitter.com/intent/tweet?url={{ share_url | urlencode }}&amp;text={{ (article.ig_title ~ ' — via IANoticias') | urlencode }}"
+         target="_blank" rel="noopener noreferrer">X</a>
+      <a class="btn-ghost" href="https://www.linkedin.com/sharing/share-offsite/?url={{ share_url | urlencode }}"
+         target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <button type="button" class="btn-ghost" data-copy-link="{{ share_url }}">⧉ Copiar link</button>
+    </div>
+  </div>
+
+  {% if article.hashtags %}
+    <p class="art-tags">
+      {% for tag in article.hashtags %}<a class="tag-link" href="/?q={{ tag | urlencode }}" title="Buscar &quot;{{ tag }}&quot;">#{{ tag }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+    </p>
+  {% endif %}
+
+  <p class="art-foot">
+    Resumo gerado por IA a partir da matéria original e revisto pelo método descrito
+    em <a href="/sobre#curadoria" style="color:var(--gold-deep);border-bottom:1px solid var(--gold-deep)">como funciona a curadoria</a>.
+    Em caso de divergência, vale o texto da fonte. Achou um erro?
+    <a href="/sobre#contato" style="color:var(--gold-deep);border-bottom:1px solid var(--gold-deep)">Fale com a gente</a>.
+  </p>
+</article>
+{% endblock %}

@@ -16,6 +16,9 @@
   <span class="k">{{ CATEGORY_KICKERS[article.category.value] }}</span>
   <h3><a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">{{ article.ig_title | highlight(hl_terms) }}</a></h3>
 
+  {# Permalink do portal — é o endereço que se compartilha (tem preview). #}
+  {% set permalink = SITE_URL ~ '/noticia/' ~ article.id %}
+
   {# Só o 1º parágrafo aparece; o resto abre no "Veja mais". #}
   {% set _paras = (article.ig_content or '').split('\n\n') %}
   <p class="card-lead">{{ _paras[0] | highlight(hl_terms) }}</p>
@@ -36,9 +39,15 @@
   </div>
 
   <div class="actions">
+    <a class="btn-ghost" href="/noticia/{{ article.id }}" title="Abrir a notícia no portal">
+      Abrir
+    </a>
     <a class="btn-ghost" href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">
       Ler matéria ↗
     </a>
+    {% with share_url=permalink, share_title=article.ig_title %}
+      {% include "partials/share_button.html" %}
+    {% endwith %}
     {% if _paras | length > 1 %}
       <button type="button" class="btn-ghost" data-toggle-more>Veja mais</button>
     {% endif %}

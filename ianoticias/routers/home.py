@@ -1,15 +1,17 @@
 """Rotas de UI: home, login, filtro de categoria."""
 from __future__ import annotations
 
+import uuid
 from collections import OrderedDict
 from datetime import date, datetime
 from typing import Iterable
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ianoticias.config.settings import settings
 from ianoticias.db.engine import get_session
 from ianoticias.db.models import Article, Category
 from ianoticias.repositories import articles as repo
@@ -243,6 +245,63 @@ async def articles_fragment(
     )
     return templates.TemplateResponse(
         "partials/article_list.html", {**ctx, "oob_counts": True}
+    )
+
+
+def _canonical(request: Request, path: str) -> str:
+    """URL absoluta do portal, para meta tags e links de compartilhamento.
+
+    Usa `PUBLIC_SITE_URL` (o domínio canônico) e cai para o host da requisição
+    quando a variável não está configurada — assim o link compartilhado nunca
+    aponta para localhost em produção, nem para produção num deploy de preview
+    sem env.
+    """
+    base = (settings.public_site_url or "").rstrip("/") or str(request.base_url).rstrip("/")
+    return f"{base}{path}"
+
+
+def _share_summary(article: Article, limit: int = 200) -> str:
+    """1º parágrafo do resumo, cortado — vira a descrição do preview do link."""
+    first = (article.ig_content or "").split("\n\n")[0].strip()
+    if len(first) <= limit:
+        return first
+    return first[:limit].rsplit(" ", 1)[0].rstrip(".,;:") + "…"
+
+
+@router.get("/noticia/{article_id}")
+async def article_page(
+    request: Request,
+    article_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Permalink de uma notícia — a página que se compartilha.
+
+    Existe para dar um endereço próprio a cada item (com Open Graph, para o
+    preview aparecer no WhatsApp/X/LinkedIn). O texto continua sendo só o
+    resumo: a matéria completa fica na fonte, linkada em destaque.
+    """
+    try:
+        uuid.UUID(article_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Notícia não encontrada.") from None
+
+    article = await repo.get_by_id(session, article_id)
+    if article is None:
+        raise HTTPException(status_code=404, detail="Notícia não encontrada.")
+
+    share_url = _canonical(request, f"/noticia/{article.id}")
+    return templates.TemplateResponse(
+        "noticia.html",
+        {
+            "request": request,
+            "is_admin": auth.is_admin(request),
+            "article": article,
+            "share_url": share_url,
+            "share_summary": _share_summary(article),
+            "share_image": article.source_image_url or article.image_url,
+            "day_label": _pt_day_label(article.day),
+            "util_date_label": _pt_util_date(datetime.now()),
+        },
     )
 
 

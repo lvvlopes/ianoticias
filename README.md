@@ -57,6 +57,39 @@ não o pedaço que está na tela.
 
 ---
 
+## Permalink e compartilhamento
+
+Cada notícia tem endereço próprio em **`/noticia/{id}`** — é o link que se
+compartilha. A página traz o resumo completo, a data, a editoria, as hashtags
+e um bloco de crédito com o botão **Ler matéria original**; o texto integral
+continua só na fonte.
+
+O permalink existe porque link compartilhado precisa de preview: a página
+emite **Open Graph** e **Twitter Card** (`og:title`, `og:description` a partir
+do 1º parágrafo, `og:image` da imagem da matéria — caindo para o card do
+Instagram — e `og:url` canônica). O `base.html` tem um `{% block meta %}` com
+o padrão do site, que a página da notícia sobrescreve.
+
+Onde aparece o botão:
+
+| Lugar | O que tem |
+|-------|-----------|
+| Card da home | `Abrir` (permalink) + `↗ Compartilhar` |
+| Manchete (hero) | `Abrir no portal` + `↗ Compartilhar` |
+| Página da notícia | Linha com WhatsApp, X, LinkedIn e `Copiar link` |
+
+`↗ Compartilhar` usa a **Web Share API** quando o navegador tem uma (celular,
+Safari, Edge): abre a folha nativa do sistema. Onde não tem, abre uma bandeja
+com WhatsApp, Telegram, X, LinkedIn, e-mail e "Copiar link" — que se
+reposiciona sozinha se fosse sair da tela. Tudo em delegação de evento no
+`base.html`, então funciona também nos cards trocados via HTMX.
+
+> As URLs compartilhadas são absolutas e saem de **`PUBLIC_SITE_URL`**
+> (exposta aos templates como `SITE_URL`). Se essa env não apontar para o
+> domínio real, o link copiado aponta para o lugar errado.
+
+---
+
 ## Guias de configuração
 
 Cada integração tem seu passo a passo detalhado, com todas as armadilhas
